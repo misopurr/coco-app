@@ -1,51 +1,33 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { useTranslation } from "react-i18next";
+
+import useEscape from "./hooks/useEscape";
+import "./i18n";
+import Header from "./components/Header";
+import Chat from "./components/Chat";
+import Raycast from "./components/Raycast";
+import Footer from "./components/Footer";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const { t } = useTranslation();
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  useEscape();
 
   return (
-    <div className="container">
-      <h1>Welcome to Tauri!</h1>
+    <div
+      className={`
+        bg-background
+        w-screen h-screen
+      `}
+    >
+      {/* <Header /> */}      
+      <main className="w-[100%] h-[100%] flex flex-col items-center justify-center">
+        <div className="text-xl text-primary">{t("welcome")}</div>
 
-      <div className="row">
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-
-      <p>{greetMsg}</p>
+        <div className="mx-0 mt-5 w-[100%]">
+          <Raycast />
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 }

@@ -15,7 +15,6 @@
         "title": "coco",
         "width": 800,
         "height": 600
-        
       }
     ],
     "security": {
@@ -32,5 +31,8 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "window": {}
   }
 }
