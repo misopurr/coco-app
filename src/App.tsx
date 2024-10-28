@@ -2,9 +2,9 @@ import { useTranslation } from "react-i18next";
 
 import useEscape from "./hooks/useEscape";
 import "./i18n";
-import Header from "./components/Header";
-import Chat from "./components/Chat";
-import Raycast from "./components/Raycast";
+// import Header from "./components/Header";
+// import Chat from "./components/Chat";
+import CommandInput from "./components/CommandInput";
 import Footer from "./components/Footer";
 
 function App() {
@@ -24,7 +24,7 @@ function App() {
         <div className="text-xl text-primary">{t("welcome")}</div>
 
         <div className="mx-0 mt-5 w-[100%]">
-          <Raycast />
+          <CommandInput />
         </div>
       </main>
       <Footer />

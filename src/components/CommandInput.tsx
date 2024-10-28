@@ -1,7 +1,7 @@
 import { Command } from "lucide-react";
 import { CommandPalette } from "./CommandPalette";
 
-function Raycast() {
+function CommandInput() {
   return (
     <div className="h-[100%] w-[100%]">
       <div className="mx-auto px-4 py-16">
@@ -25,4 +25,4 @@ function Raycast() {
   );
 }
 
-export default Raycast;
+export default CommandInput;
