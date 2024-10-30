@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer {
+  :root {
+    --background: #ffffff;
+    --foreground: #09090b;
+    --border: #e3e3e7;
+  }
+
+  .dark {
+    --background: #09090b;
+    --foreground: #f9f9f9;
+    --border: #27272a;
+  }
+}
+
+@layer base {
+  * {
+    @apply box-border border-[--border];
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+  }
+
+  .dark body {
+    @apply bg-gray-900 text-gray-100;
+  }
+}
+
+@layer components {
+  .settings-input {
+    @apply block w-full rounded-md border-gray-300 dark:border-gray-600 
+           bg-white dark:bg-gray-700 
+           text-gray-900 dark:text-gray-100 
+           shadow-sm focus:border-blue-500 focus:ring-blue-500 
+           transition-colors duration-200;
+  }
+
+  .settings-select {
+    @apply text-sm rounded-md border-gray-300 dark:border-gray-600 
+           bg-white dark:bg-gray-700 
+           text-gray-900 dark:text-gray-100 
+           shadow-sm focus:border-blue-500 focus:ring-blue-500 
+           transition-colors duration-200;
+  }
+}
