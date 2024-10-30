@@ -1,11 +1,40 @@
+import React from "react";
+import { Settings, LogOut, Command, User, Home, ChevronUp } from "lucide-react";
 import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/react";
-import { Command, Settings, LogOut, User, ChevronUp, Home } from "lucide-react";
 import { Link } from "react-router-dom";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
-const Footer = () => {
+const shortcuts = [
+  { label: "翻页/换行", keys: "↓" },
+  { label: "快速换行", keys: "Tab" },
+  { label: "Talk to AI", keys: "⌘ + /" },
+  { label: "Open", keys: "⌘ + O" },
+];
+
+export const Footer: React.FC = () => {
+  async function openWebviewWindowSettings() {
+    const webview = new WebviewWindow("settings", {
+      dragDropEnabled: true,
+      center: true,
+      width: 900,
+      height: 700,
+      alwaysOnTop: true,
+      skipTaskbar: true,
+      decorations: true,
+      closable: true,
+      url: "/settings",
+    });
+    webview.once("tauri://created", function () {
+      console.log("webview created");
+    });
+    webview.once("tauri://error", function (e) {
+      console.log("error creating webview", e);
+    });
+  }
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700">
-      <div className="max-w-6xl mx-auto px-4 h-8 flex items-center justify-between">
+    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 h-8 flex items-center justify-between">
+      <div className="flex items-center">
         <Menu as="div" className="relative">
           <MenuButton className="h-7 flex items-center space-x-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <Command className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -31,7 +60,7 @@ const Footer = () => {
                   </button>
                 )}
               </MenuItem>
-              <MenuItem>
+              {/* <MenuItem>
                 {({ active }) => (
                   <button
                     className={`${
@@ -44,7 +73,7 @@ const Footer = () => {
                     Profile
                   </button>
                 )}
-              </MenuItem>
+              </MenuItem> */}
               <MenuItem>
                 {({ active }) => (
                   <button
@@ -53,13 +82,14 @@ const Footer = () => {
                         ? "bg-gray-100 dark:bg-gray-700"
                         : "text-gray-900 dark:text-gray-100"
                     } group flex w-full items-center rounded-md px-3 py-2 text-sm`}
+                    onClick={openWebviewWindowSettings}
                   >
                     <Settings className="w-4 h-4 mr-2" />
-                    <Link to={`settings`}>Settings</Link>
+                    Settings
                   </button>
                 )}
               </MenuItem>
-              <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
+              {/* <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
               <MenuItem>
                 {({ active }) => (
                   <button
@@ -73,23 +103,28 @@ const Footer = () => {
                     Sign Out
                   </button>
                 )}
-              </MenuItem>
+              </MenuItem> */}
             </div>
           </MenuItems>
         </Menu>
+      </div>
 
-        <div className="flex items-center space-x-4">
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            Version 1.0.0
-          </span>
-          <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
-          <button className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-            Check for Updates
-          </button>
-        </div>
+      <div className="flex items-center gap-4">
+        {shortcuts.map((shortcut, index) => (
+          <div
+            key={index}
+            className="flex items-center text-gray-500 dark:text-gray-400 text-sm"
+          >
+            {index > 0 && (
+              <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mr-4" />
+            )}
+            <span className="mr-1.5">{shortcut.label}</span>
+            <kbd className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs font-medium">
+              {shortcut.keys}
+            </kbd>
+          </div>
+        ))}
       </div>
     </div>
   );
 };
-
-export default Footer;
