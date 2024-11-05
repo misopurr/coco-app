@@ -10,6 +10,8 @@ In addition, COCO offers a **Gen-AI Chat for Teams**—imagine **ChatGPT** but t
 
 ## Vision
 
+![](https://github.com/infinilabs/coco-website/blob/main/public/github-banner.gif)
+
 At COCO AI, we aim to streamline workplace collaboration by centralizing access to enterprise data. The COCO App provides a seamless, cross-platform experience, enabling teams to easily search, connect, and collaborate within their workspace.
 
 ## Use Cases
