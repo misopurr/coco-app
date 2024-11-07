@@ -31,6 +31,7 @@ To set up the Coco App for development:
 
 ```bash
 cd coco-app
+npm install -g pnpm
 pnpm install
 pnpm tauri dev
 ```
