@@ -27,5 +27,12 @@ export default defineConfig(async () => ({
       // 3. tell vite to ignore watching `src-tauri`
       ignored: ["**/src-tauri/**"],
     },
+    proxy: {
+      "/chat": {
+        target: "http://localhost:2900",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/chat/, ""),
+      },
+    },
   },
 }));
