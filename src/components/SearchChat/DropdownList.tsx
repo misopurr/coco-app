@@ -103,7 +103,7 @@ function DropdownList({ selected, suggests }: DropdownListProps) {
     <div
       ref={containerRef}
       data-tauri-drag-region
-      className="h-[500px] w-full p-2 pb-10 flex flex-col bg-search_bg_light dark:bg-chat_bg_dark bg-cover rounded-xl overflow-y-auto overflow-hidden focus:outline-none"
+      className="h-[500px] w-full p-2 pb-10 flex flex-col rounded-xl overflow-y-auto overflow-hidden focus:outline-none"
       tabIndex={0}
     >
       {suggests?.map((item, index) => {

@@ -211,7 +211,7 @@ const ChatAI = forwardRef<ChatAIRef, ChatAIProps>(
     return (
       <div
         data-tauri-drag-region
-        className={`h-[500px] flex flex-col rounded-xl overflow-hidden bg-chat_bg_light dark:bg-chat_bg_dark bg-cover`}
+        className={`h-[500px] flex flex-col rounded-xl overflow-hidden`}
       >
         <header
           data-tauri-drag-region

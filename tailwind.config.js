@@ -11,12 +11,12 @@ export default {
         separator: "rgb(var(--color-separator) / <alpha-value>)",
       },
       backgroundImage: {
-        'chat_bg_light': "url('/chat_bg_light.png')",
-        'chat_bg_dark': "url('/chat_bg_dark.png')",
-        'search_bg_light': "url('/search_bg_light.png')",
-        'search_bg_dark': "url('/search_bg_dark.png')",
-        'inputbox_bg_light': "url('/inputbox_bg_light.png')",
-        'inputbox_bg_dark': "url('/inputbox_bg_dark.png')",
+        chat_bg_light: "url('/chat_bg_light.png')",
+        chat_bg_dark: "url('/chat_bg_dark.png')",
+        search_bg_light: "url('/search_bg_light.png')",
+        search_bg_dark: "url('/search_bg_dark.png')",
+        inputbox_bg_light: "url('/inputbox_bg_light.png')",
+        inputbox_bg_dark: "url('/inputbox_bg_dark.png')",
       },
       textColor: {
         primary: "rgb(var(--color-foreground) / <alpha-value>)",
@@ -29,6 +29,9 @@ export default {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },
         },
+      },
+      boxShadow: {
+        'window-custom': '0 1px 5px 0 rgba(0, 0, 0, 0.15), 0 1px 5px -1px rgba(0, 0, 0, 0.1), 0 2px 5px rgba(0, 0, 0, 0.1)',
       },
     },
   },

@@ -54,7 +54,7 @@ export default function ChatInput({
 
   return (
     <div className="w-full rounded-xl overflow-hidden">
-      <div className="bg-inputbox_bg_light dark:bg-inputbox_bg_dark bg-cover rounded-xl">
+      <div className="rounded-xl">
         <div className="p-[13px] flex items-center dark:text-[#D8D8D8] bg-white dark:bg-[#202126] rounded-xl transition-all">
           <div className="flex flex-wrap gap-2 flex-1 items-center">
             {isChatMode ? (
