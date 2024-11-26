@@ -54,8 +54,8 @@ export default function SearchChat() {
       className={`w-full h-full min-h-screen mx-auto overflow-hidden relative`}
     >
       <div
-        className={`absolute z-100 w-full flex items-center justify-center duration-500 ${
-          isTransitioned ? "top-[510px] h-[90px]" : "top-0 h-[90px]"
+        className={`rounded-xl overflow-hidden bg-inputbox_bg_light dark:bg-inputbox_bg_dark bg-cover border border-[#E6E6E6] dark:border-[#272626] absolute z-100 w-full flex items-center justify-center duration-500 ${
+          isTransitioned ? "top-[506px] h-[90px]" : "top-0 h-[90px]"
         }`}
       >
         <InputBox
@@ -73,10 +73,10 @@ export default function SearchChat() {
       </div>
 
       <div
-        className={`absolute w-full transition-all duration-500 ${
+        className={`rounded-xl overflow-hidden bg-chat_bg_light dark:bg-chat_bg_dark bg-cover border border-[#E6E6E6] dark:border-[#272626] absolute w-full transition-all duration-500 ${
           isTransitioned
             ? "top-0 opacity-100 pointer-events-auto"
-            : "-top-[510px] opacity-0 pointer-events-none"
+            : "-top-[506px] opacity-0 pointer-events-none"
         } h-[500px]`}
       >
         <ChatAI
@@ -88,13 +88,15 @@ export default function SearchChat() {
         />
       </div>
 
-      <Search
-        key="Search"
-        input={input}
-        isChatMode={isChatMode}
-        isTransitioned={isTransitioned}
-        changeInput={changeInput}
-      />
+      {isChatMode ? null : (
+        <Search
+          key="Search"
+          input={input}
+          isChatMode={isChatMode}
+          isTransitioned={isTransitioned}
+          changeInput={changeInput}
+        />
+      )}
     </div>
   );
 }

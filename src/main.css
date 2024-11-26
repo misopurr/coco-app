@@ -82,4 +82,8 @@
   .dark .custom-scrollbar::-webkit-scrollbar-thumb {
     background-color: #475569;
   }
+
+  .bg-100 {
+    background-size: 100% 100%;
+  }
 }

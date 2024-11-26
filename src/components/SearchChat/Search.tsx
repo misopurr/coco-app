@@ -56,17 +56,22 @@ function Search({ isTransitioned, isChatMode, input }: SearchProps) {
     !isChatMode && debouncedSearch();
   }, [input]);
 
-  if (suggests.length === 0) return null;
+  console.log(11111, isChatMode);
+  if (isChatMode || suggests.length === 0) return null;
 
   return (
     <div
-      className={`absolute w-full transition-opacity duration-500 ${
+      className={`rounded-xl overflow-hidden bg-search_bg_light dark:bg-search_bg_dark bg-cover border border-[#E6E6E6] dark:border-[#272626] absolute w-full transition-opacity duration-500 ${
         isTransitioned ? "opacity-0 pointer-events-none" : "opacity-100"
       } bottom-0 h-[500px]`}
+      style={{
+        backgroundPosition: "-1px 0",
+        backgroundSize: "101% 100%",
+      }}
     >
       {isChatMode ? null : (
         <div
-          className={`min-h-full w-full flex items-start justify-center rounded-xl overflow-hidden relative`}
+          className={`min-h-full w-full flex items-start justify-center overflow-hidden relative`}
         >
           {/* Search Results Panel */}
           {suggests.length > 0 ? (
