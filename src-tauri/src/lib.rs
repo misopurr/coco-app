@@ -227,6 +227,7 @@ fn enable_tray(app: &mut tauri::App) {
         image::Image,
         menu::{Menu, MenuItem},
         tray::TrayIconBuilder,
+        webview::WebviewBuilder,
     };
 
     let image = Image::from_path("icons/32x32.png").unwrap();
@@ -240,10 +241,26 @@ fn enable_tray(app: &mut tauri::App) {
         .on_menu_event(|app, event| match event.id.as_ref() {
             "settings" => {
                 println!("settings menu item was clicked");
-                let app_handle = app.app_handle();
-                if let Some(window) = app_handle.get_webview_window("settings") {
-                  let _ = window.show();
-                  let _ = window.set_focus();
+                let window = app.get_webview_window("settings");
+                if let Some(window) = window {
+                    window.show().unwrap();
+                    window.set_focus().unwrap();
+                } else {
+                    let window = tauri::window::WindowBuilder::new(app, "Settings")
+                        .build()
+                        .unwrap();
+                    let webview_builder = WebviewBuilder::new(
+                        "Settings",
+                        tauri::WebviewUrl::App("index.html".into()),
+                    );
+                    let webview = window
+                        .add_child(
+                            webview_builder,
+                            tauri::LogicalPosition::new(0, 0),
+                            window.inner_size().unwrap(),
+                        )
+                        .unwrap();
+
                 }
             }
             "quit" => {
