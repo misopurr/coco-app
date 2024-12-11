@@ -58,7 +58,7 @@ function SettingsPage() {
                 ))}
               </TabList>
 
-              <TabPanels className="mt-6">
+              <TabPanels className="mt-2">
                 <TabPanel>
                   <SettingsPanel title="">
                     <GeneralSettings theme={theme} setTheme={setTheme} />

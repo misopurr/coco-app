@@ -3,6 +3,7 @@ use std::{fs::create_dir, io::Read};
 use tauri::{AppHandle, Manager, Runtime, WebviewWindow};
 use tauri_nspanel::{panel_delegate, ManagerExt, WebviewWindowExt};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
+use tauri_plugin_autostart::MacosLauncher;
 
 const DEFAULT_SHORTCUT: &str = "command+shift+space";
 
@@ -44,24 +45,53 @@ fn close_panel(handle: AppHandle) {
     panel.close();
 }
 
+// fn enable_autostart(app: &mut tauri::App) {
+//   use tauri_plugin_autostart::MacosLauncher;
+//   use tauri_plugin_autostart::ManagerExt;
+
+//   app.handle()
+//       .plugin(tauri_plugin_autostart::init(
+//           MacosLauncher::AppleScript,
+//           None,
+//       ))
+//       .unwrap();
+
+//   let autostart_manager = app.autolaunch();
+
+//   match autostart_manager.is_enabled() {
+//       Ok(true) => {
+//           println!("Autostart is already enabled.");
+//       }
+//       Ok(false) => {
+//           match autostart_manager.enable() {
+//               Ok(_) => println!("Autostart enabled successfully."),
+//               Err(err) => eprintln!("Failed to enable autostart: {}", err),
+//           }
+//       }
+//       Err(err) => {
+//           eprintln!("Failed to check autostart status: {}", err);
+//       }
+//   }
+// }
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_nspanel::init())
+        .plugin(tauri_plugin_autostart::init(MacosLauncher::AppleScript, None))
         .invoke_handler(tauri::generate_handler![
             greet,
             change_window_height,
             change_shortcut,
             show_panel,
             hide_panel,
-            close_panel,
+            close_panel,      
         ])
         .setup(|app| {
             init(app.app_handle());
 
-            enable_autostart(app);
             enable_shortcut(app);
             enable_tray(app);
 
@@ -98,23 +128,6 @@ fn init(app_handle: &AppHandle) {
     }));
 
     panel.set_delegate(delegate);
-}
-
-fn enable_autostart(app: &mut tauri::App) {
-    use tauri_plugin_autostart::MacosLauncher;
-    use tauri_plugin_autostart::ManagerExt;
-
-    app.handle()
-        .plugin(tauri_plugin_autostart::init(
-            MacosLauncher::AppleScript,
-            None,
-        ))
-        .unwrap();
-
-    // Get the autostart manager
-    let autostart_manager = app.autolaunch();
-    // Enable autostart
-    let _ = autostart_manager.enable();
 }
 
 fn enable_shortcut(app: &mut tauri::App) {
@@ -246,14 +259,18 @@ fn enable_tray(app: &mut tauri::App) {
                     window.show().unwrap();
                     window.set_focus().unwrap();
                 } else {
-                    let window = tauri::window::WindowBuilder::new(app, "Settings")
+                    let window = tauri::window::WindowBuilder::new(app, "settings")
+                        .title("Settings Window") 
+                        .inner_size(800.0, 600.0) 
+                        .resizable(true) 
+                        .fullscreen(false) 
                         .build()
                         .unwrap();
                     let webview_builder = WebviewBuilder::new(
-                        "Settings",
-                        tauri::WebviewUrl::App("index.html".into()),
+                        "settings",
+                        tauri::WebviewUrl::App("/ui/settings".into()),
                     );
-                    let webview = window
+                    let _webview = window
                         .add_child(
                             webview_builder,
                             tauri::LogicalPosition::new(0, 0),
