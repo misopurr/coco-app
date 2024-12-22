@@ -1,11 +1,14 @@
 use std::{fs::create_dir, io::Read};
 
-use tauri::{ActivationPolicy, AppHandle, Emitter, Manager, Runtime, WebviewWindow};
+use tauri::{AppHandle, Emitter, Manager, Runtime, WebviewWindow};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
 mod autostart;
 use autostart::{change_autostart, enable_autostart};
+
+#[cfg(target_os = "macos")]
+use tauri::ActivationPolicy;
 
 #[cfg(target_os = "macos")]
 const DEFAULT_SHORTCUT: &str = "command+shift+space";
@@ -79,7 +82,7 @@ fn enable_shortcut(app: &mut tauri::App) {
                     //println!("{:?}", shortcut);
                     if shortcut == &command_shortcut {
                         if let ShortcutState::Pressed = event.state() {
-                            if window.is_focused().unwrap() {
+                            if window.is_visible().unwrap() {
                                 window.hide().unwrap();
                             } else {
                                 window.show().unwrap();
@@ -223,12 +226,12 @@ fn enable_tray(app: &mut tauri::App) {
                 let _ = app.emit("open_settings", "about");
             }
             "settings" => {
-                // windows failed to open second window, issue: https://github.com/tauri-apps/tauri/issues/11144
+                // windows failed to open second window, issue: https://github.com/tauri-apps/tauri/issues/11144 https://github.com/tauri-apps/tauri/issues/8196
                 //#[cfg(windows)]
                 let _ = app.emit("open_settings", "");
 
                 // #[cfg(not(windows))]
-                // open_setting(&app);
+                // open_settings(&app);
             }
             "quit" => {
                 println!("quit menu item was clicked");
@@ -243,7 +246,7 @@ fn enable_tray(app: &mut tauri::App) {
 }
 
 #[allow(dead_code)]
-fn open_settings(app: &tauri::App) {
+fn open_settings(app: &tauri::AppHandle) {
     use tauri::webview::WebviewBuilder;
     println!("settings menu item was clicked");
     let window = app.get_webview_window("settings");
