@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Command, Monitor, Palette, Moon, Sun, Power, Tags } from "lucide-react";
+import { Command, Monitor, Palette, Moon, Sun, Power, Tags, CircleX } from "lucide-react";
 import { isTauri, invoke } from "@tauri-apps/api/core";
 import {
   isEnabled,
@@ -275,6 +275,16 @@ export default function GeneralSettings() {
     setListening(listening?false:true);
   };
 
+  const handleClearHotkey = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setHotkey(null);
+    setPressedKeys(new Set());
+    setListening(false);
+    invoke("change_shortcut", { key: "" }).catch((err) => {
+      console.error("Failed to clear shortcut:", err);
+    });
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -282,7 +292,7 @@ export default function GeneralSettings() {
           General Settings
         </h2>
         <div className="space-y-6">
-          <SettingsItem
+                <SettingsItem
             icon={Power}
             title="Startup"
             description="Automatically start Coco when you login"
@@ -304,12 +314,23 @@ export default function GeneralSettings() {
             <div className="flex items-center gap-2">
               <span className="text-red-500">{errorInfo}</span>
               <span className="text-blue-500">{listening ? "Listening..." : ""}</span>
-              <button
-                onClick={handleStartListening}
-                className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
-              >
-                {formatHotkey(hotkey)}
-              </button>
+              <div className="relative inline-flex items-center">
+                <button
+                  onClick={handleStartListening}
+                  className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
+                >
+                  {formatHotkey(hotkey)}
+                </button>
+                {hotkey && (
+                  <button
+                    onClick={handleClearHotkey}
+                    className="ml-2 p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200"
+                    title="Clear shortcut"
+                  >
+                    <CircleX className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
           </SettingsItem>
 
