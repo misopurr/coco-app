@@ -33,8 +33,10 @@
     "unlisten",
     "unlistener",
     "unminimize",
+    "uuidv",
     "VITE",
     "webviews",
+    "yuque",
     "zustand"
   ],
   "[rust]": {
