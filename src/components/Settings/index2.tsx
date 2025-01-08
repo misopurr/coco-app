@@ -7,7 +7,7 @@ import SettingsPanel from "./SettingsPanel";
 import GeneralSettings from "./GeneralSettings";
 import AboutView from "./AboutView";
 import Account from "./Account";
-// import CocoCloud from "@/components/Auth/CocoCloud"
+import CocoCloud from "@/components/Auth/CocoCloud"
 import Footer from "../Footer";
 import { useTheme } from "../../contexts/ThemeContext";
 import { AppTheme } from "../../utils/tauri";
@@ -25,7 +25,7 @@ function SettingsPage() {
   const tabs = [
     { name: "General", icon: Settings },
     { name: "Extensions", icon: Puzzle },
-    { name: "Account", icon: User },
+    { name: "Connect", icon: User },
     { name: "Advanced", icon: Settings2 },
     { name: "About", icon: Info },
   ];
@@ -79,7 +79,7 @@ function SettingsPage() {
               </TabPanel>
               <TabPanel>
                 <Account />
-                {/* <CocoCloud /> */}
+                <CocoCloud />
               </TabPanel>
               <TabPanel>
                 <SettingsPanel title="">
