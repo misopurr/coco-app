@@ -2,8 +2,6 @@ import { fetch } from "@tauri-apps/plugin-http";
 
 import { clientEnv } from "@/utils/env";
 
-const baseURL = `${clientEnv.COCO_SERVER_URL}`
-
 interface FetchRequestConfig {
   url: string;
   method?: "GET" | "POST" | "PUT" | "DELETE";
@@ -11,6 +9,7 @@ interface FetchRequestConfig {
   body?: any;
   timeout?: number;
   parseAs?: "json" | "text" | "binary";
+  baseURL?: string;
 }
 
 interface FetchResponse<T = any> {
@@ -33,7 +32,10 @@ export const tauriFetch = async <T = any>({
   body,
   timeout = 30,
   parseAs = "json",
+  baseURL = clientEnv.COCO_SERVER_URL
 }: FetchRequestConfig): Promise<FetchResponse<T>> => {
+  console.log(11111111, baseURL)
+
   try {
     url = baseURL + url;
     if (method !== "GET") {
