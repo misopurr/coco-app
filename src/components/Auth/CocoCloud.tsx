@@ -1,26 +1,29 @@
 import { useState, useEffect } from "react";
 import { Cloud } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
-import { useNavigate } from "react-router-dom";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import * as shell from "@tauri-apps/plugin-shell";
 
 import { UserProfile } from "./UserProfile";
 import { DataSourcesList } from "./DataSourcesList";
 import { Sidebar } from "./Sidebar";
 import { ConnectService } from "./ConnectService";
-// import { OpenBrowserURL } from "@/utils/index";
+import { OpenBrowserURL } from "@/utils/index";
 import { useAppStore } from "@/stores/appStore";
 import { useAuthStore } from "@/stores/authStore";
-import callbackTemplate from "@/components/Auth/callback.template";
 import { tauriFetch } from "@/api/tauriFetchClient";
+import {
+  onOpenUrl,
+  getCurrent as getCurrentDeepLinkUrls,
+} from "@tauri-apps/plugin-deep-link";
 
 export default function CocoCloud() {
   const appStore = useAppStore();
 
-  const [isLogin] = useState(false);
+  const [lastUrl, setLastUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [info2, setInfo2] = useState<string | null>(null);
+
   const [isConnect] = useState(true);
 
   const app_uid = useAppStore((state) => state.app_uid);
@@ -29,106 +32,36 @@ export default function CocoCloud() {
 
   const { auth, setAuth } = useAuthStore();
 
-  const navigate = useNavigate();
-
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
+  const getProfile = async () => {
+    const response: any = await tauriFetch({
+      url: `/profile`,
+      method: "GET",
+      baseURL: appStore.endpoint_http,
+    });
+    console.log("getProfile", response);
 
-    const setupAuthListener = async () => {
-      try {
-        if (!auth) {
-          // Replace the current route with signin
-          // navigate("/signin", { replace: true });
-        }
-      } catch (error) {
-        console.error("Failed to set up auth listener:", error);
-      }
-    };
+    setInfo2(JSON.stringify(response))
+  }
 
-    setupAuthListener();
+  const handleOAuthCallback = async (
+    code: string | null,
+    provider: string | null
+  ) => {
+    if (!code) {
+      setError("No authorization code received");
+      return;
+    }
 
-    // Clean up logic on unmount
-    return () => {
-      const cleanup = async () => {
-        try {
-          await invoke("plugin:oauth|stop");
-        } catch (e) {
-          // Ignore errors if no server is running
-        }
-        if (unsubscribe) {
-          unsubscribe();
-        }
-      };
-
-      cleanup();
-    };
-  }, [auth]);
-
-  async function signIn() {
-    let res: (url: URL) => void;
+    // mock
+    // code = "d11feeab43f6c3e48a43"
+    // provider = "coco-cloud"
 
     try {
-      const stopListening = await listen(
-        // "oauth://url",
-        "coco://oauth_callback",
-        (data: { payload: string }) => {
-          console.log(111, data.payload);
-
-          // if (!data.payload.includes("provider")) {
-          //   return;
-          // }
-
-          const urlObject = new URL(data.payload);
-          res(urlObject);
-        }
-      );
-
-      // Stop any existing OAuth server first
-      try {
-        await invoke("plugin:oauth|stop");
-      } catch (e) {
-        // Ignore errors if no server is running
-      }
-
-      const port: string = await invoke("plugin:oauth|start", {
-        config: {
-          response: callbackTemplate,
-          headers: {
-            "Content-Type": "text/html; charset=utf-8",
-            "Cache-Control": "no-store, no-cache, must-revalidate",
-            Pragma: "no-cache",
-          },
-          // Add a cleanup function to stop the server after handling the request
-          cleanup: true,
-        },
-      });
-
-      let uid = app_uid;
-      if (!uid) {
-        uid = uuidv4();
-        setAppUid(uid);
-      }
-
-      await shell.open(
-        `${endpoint_http}/sso/login?provider=coco-cloud&product=coco&request_id=${uid}&port=${port}`
-      );
-
-      const url = await new Promise<URL>((r) => {
-        res = r;
-      });
-      stopListening();
-
-      const code = url.searchParams.get("code");
-      const provider = url.searchParams.get("provider");
-
-      if (!code || provider !== "coco-cloud") {
-        throw new Error("Invalid token or expires");
-      }
-
+      console.log("Handling OAuth callback:", { code, provider });
       const response: any = await tauriFetch({
-        url: `/auth/request_access_token?request_id=${uid}`,
+        url: `/auth/request_access_token?request_id=${app_uid}`,
         method: "GET",
         baseURL: appStore.endpoint_http,
         headers: {
@@ -136,31 +69,84 @@ export default function CocoCloud() {
         },
       });
       // { "access_token":xxx, "expire_at": "unix_timestamp_in_s" }
+      console.log("response", response); 
+      setInfo(JSON.stringify(response))
+
+      getProfile()
 
       await setAuth({
-        token: response?.access_token,
-        expires: response?.expire_at,
+        token: response.data?.access_token,
+        expires: response.data?.expire_at,
         plan: { upgraded: false, last_checked: 0 },
       });
 
       getCurrentWindow()
         .setFocus()
         .catch(() => {});
-
-      return navigate("/ui/settings");
-    } catch (error) {
+    } catch (e) {
       console.error("Sign in failed:", error);
       await setAuth(undefined);
       throw error;
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  async function initializeUser() {
-    // let uid = app_uid;
-    // if (!uid) {
-    //   uid = uuidv4();
-    //   setAppUid(uid);
-    // }
+  const handleUrl = (url: string) => {
+    try {
+      const urlObject = new URL(url);
+      console.error("1111111:", urlObject);
+
+      switch (urlObject.pathname) {
+        case "oauth_callback":
+          const code = urlObject.searchParams.get("code");
+          const provider = urlObject.searchParams.get("provider");
+          handleOAuthCallback(code, provider);
+          break;
+
+        default:
+          console.log("Unhandled deep link path:", urlObject.pathname);
+      }
+
+      setLastUrl(url);
+    } catch (err) {
+      console.error("Failed to parse URL:", err);
+      setError("Invalid URL format");
+    }
+  };
+
+  // Fetch the initial deep link intent
+  useEffect(() => {
+    // coco://oauth_calback?code=&provider=
+    // handleOAuthCallback("cu0bpu53q95r66at2010", "coco-cloud");
+    // 
+    getCurrentDeepLinkUrls()
+      .then((urls) => {
+        console.error("22222 URLs:", urls);
+        if (urls && urls.length > 0) {
+          handleUrl(urls[0]);
+          console.error("URLs:", urls);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to get initial URLs:", err);
+        setError("Failed to get initial URLs");
+      });
+
+    const unlisten = onOpenUrl((urls) => handleUrl(urls[0]));
+
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, []);
+
+  function LoginClick() {
+    let uid = app_uid;
+    if (!uid) {
+      uid = uuidv4();
+      setAppUid(uid);
+    }
+
     // const response = await fetch("/api/register", {
     //   method: "POST",
     //   headers: { "Content-Type": "application/json" },
@@ -168,22 +154,12 @@ export default function CocoCloud() {
     // });
     // const { token } = await response.json();
     // localStorage.setItem("auth_token", token);
-    // OpenBrowserURL(
-    //   `https://app.coco.rs/sso/login?provider=coco-cloud&request_id=${uid}`
-    // );
+
+    OpenBrowserURL(
+      `${endpoint_http}/sso/login/github?provider=coco-cloud&product=coco&request_id=${uid}`
+    );
 
     setLoading(true);
-    try {
-      await signIn();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function LoginClick() {
-    initializeUser();
   }
 
   return (
@@ -191,6 +167,30 @@ export default function CocoCloud() {
       <Sidebar />
 
       <main className="flex-1">
+        <div>
+          {error && (
+            <div className="text-red-500 dark:text-red-400">Error: {error}</div>
+          )}
+
+          {lastUrl && (
+            <div className="text-gray-700 dark:text-gray-300">
+              Last opened URL: {lastUrl}
+            </div>
+          )} 
+          
+          {info && (
+            <div className="text-gray-700 dark:text-gray-300">
+              Info : {info}
+            </div>
+          )}
+          
+          {info2 && (
+            <div className="text-gray-700 dark:text-gray-300">
+              info2 : {info2}
+            </div>
+          )}
+        </div>
+
         {isConnect ? (
           <div className="max-w-4xl mx-auto px-4 py-8">
             <div className="flex items-center justify-between mb-8">
@@ -230,7 +230,7 @@ export default function CocoCloud() {
               <h2 className="text-lg font-medium text-gray-900 mb-4">
                 Account Information
               </h2>
-              {isLogin ? (
+              {auth ? (
                 <UserProfile name="Rain" email="an121245@gmail.com" />
               ) : (
                 <button
@@ -242,7 +242,7 @@ export default function CocoCloud() {
               )}
             </div>
 
-            {isLogin ? <DataSourcesList /> : null}
+            {auth ? <DataSourcesList /> : null}
           </div>
         ) : (
           <ConnectService />
