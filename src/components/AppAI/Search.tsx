@@ -70,6 +70,7 @@ function Search({ isChatMode, input }: SearchProps) {
         method: "GET",
         baseURL: appStore.endpoint_http,
       });
+
       console.log("_suggest", input, response);
       const data = response.data?.hits?.hits || [];
       setSuggests(data);

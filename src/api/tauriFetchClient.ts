@@ -1,6 +1,7 @@
 import { fetch } from "@tauri-apps/plugin-http";
 
 import { clientEnv } from "@/utils/env";
+import { useLogStore } from "@/stores/logStore";
 
 interface FetchRequestConfig {
   url: string;
@@ -41,13 +42,26 @@ export const tauriFetch = async <T = any>({
   const { state: { auth } } = JSON.parse(localStorage.getItem("auth-store") || "")
   console.log("auth", auth)
 
+  const addLog = useLogStore.getState().addLog;
+
   try {
     url = baseURL + url;
+
     if (method !== "GET") {
       headers["Content-Type"] = "application/json";
     }
 
     headers["X-API-TOKEN"] = auth?.token || "";
+
+    // debug API
+    const requestInfo = {
+      url,
+      method,
+      headers,
+      body,
+      timeout,
+      parseAs,
+    };
 
     const fetchPromise = fetch(url, {
       method,
@@ -71,6 +85,13 @@ export const tauriFetch = async <T = any>({
       data = await response.arrayBuffer();
     }
 
+    // debug API
+    const log = {
+      request: requestInfo,
+      response: response,
+    };
+    addLog(log);
+
     return {
       data,
       status: response.status,
@@ -79,6 +100,21 @@ export const tauriFetch = async <T = any>({
     };
   } catch (error) {
     console.error("Request failed:", error);
+
+    // debug API
+    const log = {
+      request: {
+        url,
+        method,
+        headers,
+        body,
+        timeout,
+        parseAs,
+      },
+      error,
+    };
+    addLog(log);
+
     throw error;
   }
 };
