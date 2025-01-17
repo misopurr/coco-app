@@ -17,12 +17,14 @@ export default function DesktopApp() {
     (state) => state.initializeListeners
   );
   const setConnectorData = useAppStore((state) => state.setConnectorData);
+  const setDatasourceData = useAppStore((state) => state.setDatasourceData);
 
   useEffect(() => {
     initializeListeners();
     initializeListeners_auth();
 
     getConnectorData();
+    getDatasourceData();
   }, []);
 
   async function getConnectorData() {
@@ -34,6 +36,20 @@ export default function DesktopApp() {
       console.log("connector", response);
       const data = response.data?.hits?.hits || [];
       setConnectorData(data);
+    } catch (error) {
+      console.error("Failed to fetch user data:", error);
+    }
+  }
+  
+  async function getDatasourceData() {
+    try {
+      const response = await tauriFetch({
+        url: `/datasource/_search`,
+        method: "GET",
+      });
+      console.log("datasource", response);
+      const data = response.data?.hits?.hits || [];
+      setDatasourceData(data);
     } catch (error) {
       console.error("Failed to fetch user data:", error);
     }
