@@ -17,6 +17,8 @@ export type IAppStore = {
   setEndpoint: (endpoint: AppEndpoint) => void,
   connector_data: any[],
   setConnectorData: (connector_data: any[]) => void,
+  datasourceData: any[],
+  setDatasourceData: (datasourceData: any[]) => void,
   initializeListeners: () => void;
 };
 
@@ -39,10 +41,6 @@ export const useAppStore = create<IAppStore>()(
           ? `wss://${withoutProtocol}/ws`
           : `ws://${withoutProtocol}/ws`;
 
-        console.log(111111, endpoint,
-          endpoint_http,
-          endpoint_websocket)
-
         set({
           endpoint,
           endpoint_http,
@@ -59,6 +57,12 @@ export const useAppStore = create<IAppStore>()(
       setConnectorData: async (connector_data: any[]) => {
         set({
           connector_data
+        });
+      },
+      datasourceData: [],
+      setDatasourceData: async (datasourceData: any[]) => {
+        set({
+          datasourceData
         });
       },
       initializeListeners: () => {

@@ -14,6 +14,8 @@ interface DropdownListProps {
 
 function DropdownList({ selected, suggests, IsError }: DropdownListProps) {
   const connector_data = useAppStore((state) => state.connector_data);
+  const datasourceData = useAppStore((state) => state.datasourceData);
+  const endpoint_http = useAppStore((state) => state.endpoint_http);
 
   const [showError, setShowError] = useState<boolean>(IsError);
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
@@ -26,7 +28,7 @@ function DropdownList({ selected, suggests, IsError }: DropdownListProps) {
     try {
       if (isTauri()) {
         await open(url);
-        console.log("URL opened in default browser");
+        // console.log("URL opened in default browser");
       }
     } catch (error) {
       console.error("Failed to open URL:", error);
@@ -34,12 +36,12 @@ function DropdownList({ selected, suggests, IsError }: DropdownListProps) {
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    console.log(
-      "handleKeyDown",
-      e.key,
-      showIndex,
-      e.key >= "0" && e.key <= "9" && showIndex
-    );
+    // console.log(
+    //   "handleKeyDown",
+    //   e.key,
+    //   showIndex,
+    //   e.key >= "0" && e.key <= "9" && showIndex
+    // );
     if (!suggests.length) return;
 
     if (e.key === "ArrowUp") {
@@ -58,7 +60,7 @@ function DropdownList({ selected, suggests, IsError }: DropdownListProps) {
     }
 
     if (e.key === "Enter" && selectedItem !== null) {
-      console.log("Enter key pressed", selectedItem);
+      // console.log("Enter key pressed", selectedItem);
       const item = suggests[selectedItem];
       if (item?._source?.url) {
         handleOpenURL(item?._source?.url);
@@ -68,7 +70,7 @@ function DropdownList({ selected, suggests, IsError }: DropdownListProps) {
     }
 
     if (e.key >= "0" && e.key <= "9" && showIndex) {
-      console.log(`number ${e.key}`);
+      // console.log(`number ${e.key}`);
       const item = suggests[parseInt(e.key, 10)];
       if (item?._source?.url) {
         handleOpenURL(item?._source?.url);
@@ -79,7 +81,7 @@ function DropdownList({ selected, suggests, IsError }: DropdownListProps) {
   };
 
   const handleKeyUp = (e: KeyboardEvent) => {
-    console.log("handleKeyUp", e.key);
+    // console.log("handleKeyUp", e.key);
     if (!suggests.length) return;
 
     if (!e.metaKey) {
@@ -107,12 +109,23 @@ function DropdownList({ selected, suggests, IsError }: DropdownListProps) {
   }, [selectedItem]);
 
   function getIcon(_source: any) {
-    const name = _source?.source?.name || "";
-    const result = connector_data.find(
-      (item: any) => item._source.category === name
+    const id = _source?.source?.id || "";
+
+    const result = datasourceData.find((item: any) => item._source.id === id);
+
+    const connector_id = result?._source?.connector?.id;
+
+    const result1 = connector_data.find(
+      (item: any) => item._source.id === connector_id
     );
-    const icons = result?._source?.assets?.icons || {};
-    return icons[_source.icon] || _source.icon;
+
+    const icons = result1?._source?.assets?.icons || {};
+
+    if (icons[_source.icon]?.includes("http")) {
+      return icons[_source.icon];
+    } else {
+      return endpoint_http + icons[_source.icon];
+    }
   }
 
   return (
