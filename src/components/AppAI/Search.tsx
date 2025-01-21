@@ -8,6 +8,9 @@ import Footer from "./Footer";
 import { tauriFetch } from "@/api/tauriFetchClient";
 import noDataImg from "@/assets/coconut-tree.png";
 import { useAppStore } from "@/stores/appStore";
+// import { res_search } from "@/mock/index";
+import { SearchResults } from "../SearchChat/SearchResults";
+import { useSearchStore } from "@/stores/searchStore";
 
 interface SearchProps {
   changeInput: (val: string) => void;
@@ -18,8 +21,11 @@ interface SearchProps {
 function Search({ isChatMode, input }: SearchProps) {
   const appStore = useAppStore();
 
+  const sourceData = useSearchStore((state) => state.sourceData);
+
   const [IsError, setIsError] = useState<boolean>(false);
   const [suggests, setSuggests] = useState<any[]>([]);
+  const [SearchData, setSearchData] = useState<any>({});
   const [isSearchComplete, setIsSearchComplete] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>();
 
@@ -55,13 +61,18 @@ function Search({ isChatMode, input }: SearchProps) {
   const getSuggest = async () => {
     if (!input) return;
     //
-    // const list = [];
-    // for (let i = 0; i < input.length; i++) {
-    //   list.push({
-    //     _source: { url: `https://www.google.com/search?q=${i}`, _id: i },
-    //   });
-    // }
+    // mock
+    // let list = res_search?.hits?.hits;
     // setSuggests(list);
+    // const search_data = list.reduce((acc: any, item) => {
+    //   const name = item._source.source.name;
+    //   if (!acc[name]) {
+    //     acc[name] = [];
+    //   }
+    //   acc[name].push(item);
+    //   return acc;
+    // }, {});
+    // setSearchData(search_data);
     // return;
     //
     try {
@@ -72,10 +83,20 @@ function Search({ isChatMode, input }: SearchProps) {
       });
 
       console.log("_suggest", input, response);
-      const data = response.data?.hits?.hits || [];
+      let data = response.data?.hits?.hits || [];
       setSuggests(data);
-      setIsError(false);
+      const search_data = data.reduce((acc: any, item: any) => {
+        const name = item?._source?.source?.name;
+        if (!acc[name]) {
+          acc[name] = [];
+        }
+        acc[name].push(item);
+        return acc;
+      }, {});
 
+      setSearchData(search_data);
+
+      setIsError(false);
       setIsSearchComplete(true);
     } catch (error) {
       setSuggests([]);
@@ -95,7 +116,7 @@ function Search({ isChatMode, input }: SearchProps) {
   const debouncedSearch = useCallback(debounce(getSuggest, 300), [input]);
 
   useEffect(() => {
-    !isChatMode && debouncedSearch();
+    !isChatMode && !sourceData && debouncedSearch();
     if (!input) setSuggests([]);
   }, [input]);
 
@@ -103,12 +124,18 @@ function Search({ isChatMode, input }: SearchProps) {
     <div ref={mainWindowRef} className={`h-[500px] pb-10 w-full relative`}>
       {/* Search Results Panel */}
       {suggests.length > 0 ? (
-        <DropdownList
-          suggests={suggests}
-          IsError={IsError}
-          isSearchComplete={isSearchComplete}
-          selected={(item) => setSelectedItem(item)}
-        />
+        sourceData ? (
+          <SearchResults input={input} isChatMode={isChatMode} />
+        ) : (
+          <DropdownList
+            suggests={suggests}
+            SearchData={SearchData}
+            IsError={IsError}
+            isSearchComplete={isSearchComplete}
+            isChatMode={isChatMode}
+            selected={(item) => setSelectedItem(item)}
+          />
+        )
       ) : (
         <div
           data-tauri-drag-region

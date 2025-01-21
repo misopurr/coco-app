@@ -1,4 +1,12 @@
-import { Library, Mic, Send, Plus, AudioLines, Image } from "lucide-react";
+import {
+  Library,
+  Mic,
+  Send,
+  Plus,
+  AudioLines,
+  Image,
+  SquareArrowLeft,
+} from "lucide-react";
 import { useRef, useState, useEffect, useCallback } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { isTauri } from "@tauri-apps/api/core";
@@ -8,6 +16,7 @@ import AutoResizeTextarea from "./AutoResizeTextarea";
 import { useChatStore } from "@/stores/chatStore";
 import StopIcon from "@/icons/Stop";
 import { useAppStore } from "@/stores/appStore";
+import { useSearchStore } from "@/stores/searchStore";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -31,6 +40,13 @@ export default function ChatInput({
   reconnect,
 }: ChatInputProps) {
   const showTooltip = useAppStore((state) => state.showTooltip);
+
+  const sourceData = useSearchStore((state) => state.sourceData);
+  const setSourceData = useSearchStore((state) => state.setSourceData);
+
+  useEffect(() => {
+    setSourceData(undefined);
+  }, []);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<{ reset: () => void; focus: () => void }>(null);
@@ -65,11 +81,14 @@ export default function ChatInput({
           case "KeyI":
             handleToggleFocus();
             break;
+          case "ArrowLeft":
+            setSourceData(undefined);
+            break;
           case "KeyM":
             console.log("KeyM");
             break;
           case "Enter":
-            isChatMode && handleSubmit();
+            isChatMode && (curChatEnd ? handleSubmit() : disabledChange());
             break;
           case "KeyO":
             console.log("KeyO");
@@ -139,7 +158,7 @@ export default function ChatInput({
 
   const [countdown, setCountdown] = useState(5);
   useEffect(() => {
-    if (connected) return
+    if (connected) return;
     if (countdown <= 0) {
       ReconnectClick();
       return;
@@ -153,14 +172,21 @@ export default function ChatInput({
   }, [countdown, connected]);
 
   const ReconnectClick = () => {
-    setCountdown(5)
-    reconnect()
-  }
+    setCountdown(5);
+    reconnect();
+  };
 
   return (
     <div className="w-full relative">
-      <div className="p-[12px] flex items-center dark:text-[#D8D8D8] bg-[#ededed] dark:bg-[#202126] rounded transition-all relative">
+      <div className="p-2 flex items-center dark:text-[#D8D8D8] bg-[#ededed] dark:bg-[#202126] rounded transition-all relative">
         <div className="flex flex-wrap gap-2 flex-1 items-center relative">
+          {!isChatMode && sourceData ? (
+            <SquareArrowLeft
+              className="w-4 h-4 text-[#000] dark:text-[#d8d8d8] cursor-pointer"
+              onClick={() => setSourceData(undefined)}
+            />
+          ) : null}
+
           {isChatMode ? (
             <AutoResizeTextarea
               ref={textareaRef}
@@ -190,11 +216,20 @@ export default function ChatInput({
               }}
             />
           )}
+          {showTooltip && isCommandPressed && !isChatMode && sourceData ? (
+            <div
+              className={`absolute left-0 w-4 h-4 flex items-center justify-center font-normal text-xs text-[#333] leading-[14px] bg-[#ccc] dark:bg-[#6B6B6B] rounded-md shadow-[-6px_0px_6px_2px_#ededed] dark:shadow-[-6px_0px_6px_2px_#202126]`}
+            >
+              ←
+            </div>
+          ) : null}
           {showTooltip && isCommandPressed ? (
             <div
-              className={`absolute bg-black bg-opacity-70 text-white font-bold px-2 py-0.5 rounded-md text-xs transition-opacity duration-200`}
+              className={`absolute ${
+                !isChatMode && sourceData ? "left-7" : ""
+              } w-4 h-4 flex items-center justify-center font-normal text-xs text-[#333] leading-[14px] bg-[#ccc] dark:bg-[#6B6B6B] rounded-md shadow-[-6px_0px_6px_2px_#ededed] dark:shadow-[-6px_0px_6px_2px_#202126]`}
             >
-              ⌘ + I
+              I
             </div>
           ) : null}
         </div>
@@ -237,28 +272,31 @@ export default function ChatInput({
 
         {showTooltip && isChatMode && isCommandPressed ? (
           <div
-            className={`absolute right-16 bg-black bg-opacity-70 text-white font-bold px-2 py-0.5 rounded-md text-xs transition-opacity duration-200`}
+            className={`absolute right-10 w-4 h-4 flex items-center justify-center font-normal text-xs text-[#333] leading-[14px] bg-[#ccc] dark:bg-[#6B6B6B] rounded-md shadow-[-6px_0px_6px_2px_#fff] dark:shadow-[-6px_0px_6px_2px_#000]`}
           >
-            ⌘ + M
+            M
           </div>
         ) : null}
 
         {showTooltip && isChatMode && isCommandPressed ? (
           <div
-            className={`absolute right-1 bg-black bg-opacity-70 text-white font-bold px-2 py-0.5 rounded-md text-xs transition-opacity duration-200`}
+            className={`absolute right-3 w-4 h-4 flex items-end justify-center font-normal text-xs text-[#333] leading-[14px] bg-[#ccc] dark:bg-[#6B6B6B] rounded-md shadow-[-6px_0px_6px_2px_#fff] dark:shadow-[-6px_0px_6px_2px_#000]`}
           >
-            ⌘ + ↩︎
+            ↩︎
           </div>
         ) : null}
 
         {!connected && isChatMode ? (
           <div className="absolute top-0 right-0 bottom-0 left-0 px-2 py-4 bg-red-500/10 rounded-md font-normal text-xs text-gray-400 flex items-center gap-4">
             Unable to connect to the server
-            <div className="w-[96px] h-[24px] bg-[#0061FF] rounded-[12px] font-normal text-xs text-white flex items-center justify-center cursor-pointer" onClick={ReconnectClick}>
+            <div
+              className="w-[96px] h-[24px] bg-[#0061FF] rounded-[12px] font-normal text-xs text-white flex items-center justify-center cursor-pointer"
+              onClick={ReconnectClick}
+            >
               Reconnect ({countdown})
             </div>
           </div>
-        ): null}
+        ) : null}
       </div>
 
       <div
@@ -280,16 +318,16 @@ export default function ChatInput({
             </button>
             {showTooltip && isCommandPressed ? (
               <div
-                className={`absolute left-2 bg-black bg-opacity-70 text-white font-bold px-2 py-0.5 rounded-md text-xs transition-opacity duration-200`}
+                className={`absolute left-2 w-4 h-4 flex items-center justify-center font-normal text-xs text-[#333] leading-[14px] bg-[#ccc] dark:bg-[#6B6B6B] rounded-md shadow-[-6px_0px_6px_2px_#fff] dark:shadow-[-6px_0px_6px_2px_#000]`}
               >
-                ⌘ + O
+                O
               </div>
             ) : null}
             {showTooltip && isCommandPressed ? (
               <div
-                className={`absolute left-16 bg-black bg-opacity-70 text-white font-bold px-2 py-0.5 rounded-md text-xs transition-opacity duration-200`}
+                className={`absolute left-16 w-4 h-4 flex items-center justify-center font-normal text-xs text-[#333] leading-[14px] bg-[#ccc] dark:bg-[#6B6B6B] rounded-md shadow-[-6px_0px_6px_2px_#fff] dark:shadow-[-6px_0px_6px_2px_#000]`}
               >
-                ⌘ + U
+                U
               </div>
             ) : null}
           </div>
@@ -306,27 +344,27 @@ export default function ChatInput({
             </button>
             {showTooltip && isCommandPressed ? (
               <div
-                className={`absolute left-0 bg-black bg-opacity-70 text-white font-bold px-2 py-0.5 rounded-md text-xs transition-opacity duration-200`}
+                className={`absolute left-0 w-4 h-4 flex items-center justify-center font-normal text-xs text-[#333] leading-[14px] bg-[#ccc] dark:bg-[#6B6B6B] rounded-md shadow-[-6px_0px_6px_2px_#fff] dark:shadow-[-6px_0px_6px_2px_#000]`}
               >
-                ⌘ + N
+                N
               </div>
             ) : null}
             {showTooltip && isCommandPressed ? (
               <div
-                className={`absolute left-14 bg-black bg-opacity-70 text-white font-bold px-2 py-0.5 rounded-md text-xs transition-opacity duration-200`}
+                className={`absolute left-6 w-4 h-4 flex items-center justify-center font-normal text-xs text-[#333] leading-[14px] bg-[#ccc] dark:bg-[#6B6B6B] rounded-md shadow-[-6px_0px_6px_2px_#fff] dark:shadow-[-6px_0px_6px_2px_#000]`}
               >
-                ⌘ + G
+                G
               </div>
             ) : null}
           </div>
         )}
 
-        <div className="relative w-24 flex justify-end items-center">
+        <div className="relative w-16 flex justify-end items-center">
           {showTooltip && isCommandPressed ? (
             <div
-              className={`absolute left-0 z-10 bg-black bg-opacity-70 text-white font-bold px-2 py-0.5 rounded-md text-xs transition-opacity duration-200`}
+              className={`absolute left-1 z-10 w-4 h-4 flex items-center justify-center font-normal text-xs text-[#333] leading-[14px] bg-[#ccc] dark:bg-[#6B6B6B] rounded-md shadow-[-6px_0px_6px_2px_#fff] dark:shadow-[-6px_0px_6px_2px_#000]`}
             >
-              ⌘ + T
+              T
             </div>
           ) : null}
           <ChatSwitch
@@ -334,6 +372,7 @@ export default function ChatInput({
             onChange={(value) => {
               value && disabledChange();
               changeMode(value);
+              setSourceData(undefined);
             }}
           />
         </div>

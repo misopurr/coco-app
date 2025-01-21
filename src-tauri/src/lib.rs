@@ -83,7 +83,6 @@ pub fn run() {
             // show_panel,
             // hide_panel,
             // close_panel
-            shortcut::check_shortcut_available,
         ])
         .setup(|app| {
             init(app.app_handle());
@@ -168,7 +167,7 @@ fn hide_coco(app: tauri::AppHandle) {
 }
 
 fn handle_open_coco(app: &AppHandle) {
-    println!("Open Coco menu clicked!");
+    // println!("Open Coco menu clicked!");
 
     if let Some(window) = app.get_window("main") {
         window.show().unwrap();
@@ -179,7 +178,7 @@ fn handle_open_coco(app: &AppHandle) {
 }
 
 fn handle_hide_coco(app: &AppHandle) {
-    println!("Hide Coco menu clicked!");
+    // println!("Hide Coco menu clicked!");
 
     if let Some(window) = app.get_window("main") {
         if let Err(err) = window.hide() {
@@ -196,7 +195,7 @@ fn handle_hide_coco(app: &AppHandle) {
 fn switch_tray_icon(app: tauri::AppHandle, is_dark_mode: bool) {
     let app_handle = app.app_handle();
 
-    println!("is_dark_mode: {}", is_dark_mode);
+    // println!("is_dark_mode: {}", is_dark_mode);
 
     const DARK_ICON_PATH: &[u8] = include_bytes!("../icons/dark@2x.png");
     const LIGHT_ICON_PATH: &[u8] = include_bytes!("../icons/light@2x.png");

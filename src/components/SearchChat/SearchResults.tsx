@@ -1,32 +1,38 @@
-import React, { useState } from "react";
-import { SearchHeader } from "./SearchHeader";
+import { useState } from "react";
 import { DocumentList } from "./DocumentList";
 import { DocumentDetail } from "./DocumentDetail";
 
-export const SearchResults: React.FC = () => {
+interface SearchResultsProps {
+  input: string;
+  isChatMode: boolean;
+}
+
+export function SearchResults({ input, isChatMode }: SearchResultsProps) {
   const [selectedDocumentId, setSelectedDocumentId] = useState("1");
 
+  const [detailData, setDetailData] = useState<any>({});
+
+  function getDocDetail(detail: any) {
+    setDetailData(detail)
+  }
+
   return (
-    <div className="max-h-[458px] w-full p-2 flex flex-col rounded-xl overflow-y-auto overflow-hidden custom-scrollbar focus:outline-none">
-      <div className="flex">
+    <div className="h-[458px] w-full p-2 pr-0 flex flex-col rounded-xl focus:outline-none">
+      <div className="h-full flex">
         {/* Left Panel */}
-        <div className="w-[50%] border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
-          <div className="px-4 flex-shrink-0">
-            <SearchHeader />
-          </div>
-          <div className="overflow-y-auto flex-1 custom-scrollbar">
-            <DocumentList
-              onSelectDocument={setSelectedDocumentId}
-              selectedId={selectedDocumentId}
-            />
-          </div>
-        </div>
+        <DocumentList
+            onSelectDocument={setSelectedDocumentId}
+            selectedId={selectedDocumentId}
+            input={input}
+            getDocDetail={getDocDetail}
+            isChatMode={isChatMode}
+          />
 
         {/* Right Panel */}
         <div className="flex-1 overflow-y-auto custom-scrollbar">
-          <DocumentDetail documentId={selectedDocumentId} />
+          <DocumentDetail document={detailData}/>
         </div>
       </div>
     </div>
   );
-};
+}

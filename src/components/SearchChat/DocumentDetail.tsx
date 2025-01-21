@@ -1,78 +1,138 @@
 import React from "react";
-import { Calendar, User, Clock } from "lucide-react";
+
+import { useAppStore } from "@/stores/appStore";
+import {formatter} from "@/utils/index"
+import source_default_img from "@/assets/images/source_default.png";
+import source_default_dark_img from "@/assets/images/source_default_dark.png";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface DocumentDetailProps {
-  documentId?: string;
+  document: any;
 }
 
-export const DocumentDetail: React.FC<DocumentDetailProps> = ({
-  documentId,
-}) => {
-  if (!documentId) {
-    return (
-      <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
-        请选择一个文档查看详情
-      </div>
+export const DocumentDetail: React.FC<DocumentDetailProps> = ({ document }) => {
+  const connector_data = useAppStore((state) => state.connector_data);
+  const datasourceData = useAppStore((state) => state.datasourceData);
+  const endpoint_http = useAppStore((state) => state.endpoint_http);
+
+  const { theme } = useTheme();
+
+  function findConnectorIcon(item: any) {
+    const id = item?._source?.source?.id || "";
+
+    const result_source = datasourceData.find(
+      (data: any) => data._source.id === id
     );
+
+    const connector_id = result_source?._source?.connector?.id;
+
+    const result_connector = connector_data.find(
+      (data: any) => data._source.id === connector_id
+    );
+
+    return result_connector?._source;
+  }
+
+  function getTypeIcon(item: any) {
+    const connectorSource = findConnectorIcon(item);
+    const icons = connectorSource?.icon;
+
+    if (!icons) {
+      return theme === "dark" ? source_default_dark_img : source_default_img;
+    }
+
+    if (icons?.includes("http")) {
+      return icons;
+    } else {
+      return endpoint_http + icons;
+    }
   }
 
   return (
-    <div className="p-8 space-y-8">
-      <div className="space-y-6">
-        <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-          产品需求规划文档
-        </h2>
-
-        <div>
-          <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              <span>2024-02-20</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              <span>张小明</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              <span>最近更新于 2小时前</span>
-            </div>
-          </div>
-        </div>
+    <div className="p-4">
+      <div className="font-normal text-xs text-[#666] dark:text-[#999] mb-2">
+        Details
       </div>
 
-      <img
+      {/* <div className="mb-4">
+        <iframe
+          src={document?._source?.metadata?.web_view_link}
+          style={{ width: "100%", height: "500px" }}
+          title="Text Preview"
+        />
+      </div> */}
+
+      {/* <img
         src="https://images.unsplash.com/photo-1664575602276-acd073f104c1"
         alt="Document preview"
         className="w-full aspect-video object-cover rounded-xl shadow-md"
-      />
+      /> */}
 
-      <div className="prose prose-gray dark:prose-invert max-w-none">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-          文档概述
-        </h3>
-        <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-          本文档详细说明了2024年Q1的产品规划方向和具体功能需求。包含了用户研究结果、
-          竞品分析、功能优先级排序等重要内容。产品团队可以基于此文档进行后续的设计和开发工作。
-        </p>
+      <div className="py-4 mt-4">
+        <div className="flex justify-between flex-wrap font-normal text-xs mb-2.5">
+          <div className="text-[#666]">Name</div>
+          <div className="text-[#333] dark:text-[#D8D8D8] text-right w-60 break-words">
+            {document?._source?.title || "-"}
+          </div>
+        </div>
 
-        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mt-6">
-          主要内容
-        </h3>
-        <ul className="list-disc pl-4 text-gray-600 dark:text-gray-300 space-y-2">
-          <li>用户痛点分析与解决方案</li>
-          <li>核心功能详细说明</li>
-          <li>交互流程设计</li>
-          <li>技术可行性评估</li>
-          <li>项目时间节点规划</li>
-        </ul>
-
-        <p className="text-gray-600 dark:text-gray-300 leading-relaxed mt-6">
-          通过实施本文档中规划的功能，我们期望能够提升用户体验，增强产品竞争力，
-          实现Q1的业务增长目标。
-        </p>
+        <div className="flex justify-between flex-wrap font-normal text-xs mb-2.5">
+          <div className="text-[#666]">Source</div>
+          <div className="text-[#333] dark:text-[#D8D8D8] flex justify-end text-right w-56 break-words">
+            <img
+              className="w-4 h-4 mr-1"
+              src={getTypeIcon(document)}
+              alt="icon"
+            />
+            {document?._source?.source?.name || "-"}
+          </div>
+        </div>
+        {/* <div className="flex justify-between font-normal text-xs mb-2.5">
+          <div className="text-[#666]">Where</div>
+          <div className="text-[#333] dark:text-[#D8D8D8] text-right w-56 break-words">
+            -
+          </div>
+        </div> */}
+        {document?._source?.updated ? (
+          <div className="flex justify-between flex-wrap font-normal text-xs mb-2.5">
+            <div className="text-[#666]">Updated at</div>
+            <div className="text-[#333] dark:text-[#D8D8D8] text-right w-56 break-words">
+              {document?._source?.updated || "-"}
+            </div>
+          </div>
+        ) : null}
+        {document?._source?.last_updated_by?.user?.username ? (
+          <div className="flex justify-between flex-wrap font-normal text-xs mb-2.5">
+            <div className="text-[#666]">Update by</div>
+            <div className="text-[#333] dark:text-[#D8D8D8] text-right w-56 break-words">
+              {document?._source?.last_updated_by?.user?.username || "-"}
+            </div>
+          </div>
+        ) : null}
+        {document?._source?.owner?.username ? (
+          <div className="flex justify-between flex-wrap font-normal text-xs mb-2.5">
+            <div className="text-[#666]">Created by</div>
+            <div className="text-[#333] dark:text-[#D8D8D8] text-right w-56 break-words">
+              {document?._source?.owner?.username || "-"}
+            </div>
+          </div>
+        ) : null}
+        {document?._source?.type ? (
+          <div className="flex justify-between flex-wrap font-normal text-xs mb-2.5">
+            <div className="text-[#666]">Type</div>
+            <div className="text-[#333] dark:text-[#D8D8D8] text-right w-56 break-words">
+              {document?._source?.type || "-"}
+            </div>
+          </div>
+        ) : null}
+        {document?._source?.size ? (
+          <div className="flex justify-between flex-wrap font-normal text-xs mb-2.5">
+            <div className="text-[#666]">Size</div>
+            <div className="text-[#333] dark:text-[#D8D8D8] text-right w-56 break-words">
+              {formatter.bytes(document?._source?.size || 0)}
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

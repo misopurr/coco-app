@@ -58,15 +58,19 @@ const typeOptions: FilterOption[] = [
   { id: "code", label: "Code" },
 ];
 
-export const SearchHeader: React.FC = () => {
+interface SearchHeaderProps {
+  total: number;
+}
+
+export const SearchHeader: React.FC<SearchHeaderProps> = ({ total }) => {
   const [typeFilter, setTypeFilter] = useState("all");
 
   return (
     <div className="flex items-center justify-between py-1">
       <div className="text-xs text-gray-600 dark:text-gray-400">
-        Find
+        Found
         <span className="px-1 font-medium text-gray-900 dark:text-gray-100">
-          200
+          {total}
         </span>
         results
       </div>
