@@ -17,12 +17,7 @@ import {
 } from "@tauri-apps/plugin-deep-link";
 
 export default function CocoCloud() {
-  const appStore = useAppStore();
-
-  const [lastUrl, setLastUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
-  const [info2, setInfo2] = useState<string | null>(null);
 
   const [isConnect] = useState(true);
 
@@ -31,19 +26,19 @@ export default function CocoCloud() {
   const endpoint_http = useAppStore((state) => state.endpoint_http);
 
   const { auth, setAuth } = useAuthStore();
+  const userInfo = useAuthStore((state) => state.userInfo);
+  const setUserInfo = useAuthStore((state) => state.setUserInfo);
 
   const [loading, setLoading] = useState(false);
 
   const getProfile = async () => {
     const response: any = await tauriFetch({
-      url: `/profile`,
+      url: `/provider/account/profile`,
       method: "GET",
-      baseURL: appStore.endpoint_http,
     });
     console.log("getProfile", response);
-
-    setInfo2(JSON.stringify(response))
-  }
+    setUserInfo(response.data || {});
+  };
 
   const handleOAuthCallback = async (
     code: string | null,
@@ -54,37 +49,40 @@ export default function CocoCloud() {
       return;
     }
 
-    // mock
-    // code = "d11feeab43f6c3e48a43"
-    // provider = "coco-cloud"
-
     try {
       console.log("Handling OAuth callback:", { code, provider });
       const response: any = await tauriFetch({
         url: `/auth/request_access_token?request_id=${app_uid}`,
         method: "GET",
-        baseURL: appStore.endpoint_http,
         headers: {
           "X-API-TOKEN": code,
         },
       });
-      // { "access_token":xxx, "expire_at": "unix_timestamp_in_s" }
-      console.log("response", response); 
-      setInfo(JSON.stringify(response))
+      console.log(
+        "response",
+        `/auth/request_access_token?request_id=${app_uid}`,
+        code,
+        response
+      );
 
-      getProfile()
+      if (response.data?.access_token) {
+        await setAuth({
+          token: response.data?.access_token,
+          expires: response.data?.expire_at,
+          plan: { upgraded: false, last_checked: 0 },
+        });
 
-      await setAuth({
-        token: response.data?.access_token,
-        expires: response.data?.expire_at,
-        plan: { upgraded: false, last_checked: 0 },
-      });
+        getProfile();
+      } else {
+        setError("Sign in failed: " + response.data?.error?.reason);
+      }
 
       getCurrentWindow()
         .setFocus()
         .catch(() => {});
     } catch (e) {
       console.error("Sign in failed:", error);
+      setError("Sign in failed: catch");
       await setAuth(undefined);
       throw error;
     } finally {
@@ -94,21 +92,23 @@ export default function CocoCloud() {
 
   const handleUrl = (url: string) => {
     try {
+      // url = "coco://oauth_callback?code=cu8ag982sdb06e0j6k3g&provider=coco-cloud"
       const urlObject = new URL(url);
-      console.error("1111111:", urlObject);
+      console.log("urlObject:", urlObject);
 
-      switch (urlObject.pathname) {
-        case "oauth_callback":
-          const code = urlObject.searchParams.get("code");
-          const provider = urlObject.searchParams.get("provider");
-          handleOAuthCallback(code, provider);
-          break;
+      const code = urlObject.searchParams.get("code");
+      const provider = urlObject.searchParams.get("provider");
+      handleOAuthCallback(code, provider);
 
-        default:
-          console.log("Unhandled deep link path:", urlObject.pathname);
-      }
+      // switch (urlObject.hostname) {
+      //   case "/oauth_callback":
 
-      setLastUrl(url);
+      //     break;
+
+      //   default:
+      //     console.log("Unhandled deep link path:", urlObject.pathname);
+      // }
+
     } catch (err) {
       console.error("Failed to parse URL:", err);
       setError("Invalid URL format");
@@ -117,15 +117,12 @@ export default function CocoCloud() {
 
   // Fetch the initial deep link intent
   useEffect(() => {
-    // coco://oauth_calback?code=&provider=
-    // handleOAuthCallback("cu0bpu53q95r66at2010", "coco-cloud");
-    // 
+    // handleUrl("");
     getCurrentDeepLinkUrls()
       .then((urls) => {
-        console.error("22222 URLs:", urls);
+        console.log("URLs:", urls);
         if (urls && urls.length > 0) {
           handleUrl(urls[0]);
-          console.error("URLs:", urls);
         }
       })
       .catch((err) => {
@@ -141,22 +138,11 @@ export default function CocoCloud() {
   }, []);
 
   function LoginClick() {
-    let uid = app_uid;
-    if (!uid) {
-      uid = uuidv4();
-      setAppUid(uid);
-    }
-
-    // const response = await fetch("/api/register", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({ uid }),
-    // });
-    // const { token } = await response.json();
-    // localStorage.setItem("auth_token", token);
+    let uid = uuidv4();
+    setAppUid(uid);
 
     OpenBrowserURL(
-      `${endpoint_http}/sso/login/github?provider=coco-cloud&product=coco&request_id=${uid}`
+      `${endpoint_http}/sso/login/?provider=coco-cloud&product=coco&request_id=${uid}`
     );
 
     setLoading(true);
@@ -169,24 +155,8 @@ export default function CocoCloud() {
       <main className="flex-1">
         <div>
           {error && (
-            <div className="text-red-500 dark:text-red-400">Error: {error}</div>
-          )}
-
-          {lastUrl && (
-            <div className="text-gray-700 dark:text-gray-300">
-              Last opened URL: {lastUrl}
-            </div>
-          )} 
-          
-          {info && (
-            <div className="text-gray-700 dark:text-gray-300">
-              Info : {info}
-            </div>
-          )}
-          
-          {info2 && (
-            <div className="text-gray-700 dark:text-gray-300">
-              info2 : {info2}
+            <div className="text-red-500 dark:text-red-400 p-4">
+              Error: {error}
             </div>
           )}
         </div>
@@ -231,7 +201,7 @@ export default function CocoCloud() {
                 Account Information
               </h2>
               {auth ? (
-                <UserProfile name="Rain" email="an121245@gmail.com" />
+                <UserProfile userInfo={userInfo} />
               ) : (
                 <button
                   className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
