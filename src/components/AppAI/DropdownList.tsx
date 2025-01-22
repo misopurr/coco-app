@@ -262,7 +262,7 @@ function DropdownList({
       ) : null}
       {Object.entries(SearchData).map(([sourceName, items]) => (
         <div key={sourceName}>
-          {items.length > 2 ? (
+          {Object.entries(SearchData).length < 5 ? (
             <div className="p-2 text-xs text-[#999] dark:text-[#666] flex items-center gap-2.5 relative">
               <img className="w-4 h-4" src={getTypeIcon(items[0])} alt="icon" />
               {sourceName}
@@ -298,7 +298,7 @@ function DropdownList({
                     selected(item);
                   }
                 }}
-                className={`w-full px-2 py-2.5 text-sm flex items-center justify-between rounded-lg transition-colors ${
+                className={`w-full px-2 py-2.5 text-sm flex gap-7 items-center justify-between rounded-lg transition-colors ${
                   isSelected
                     ? "text-white bg-[#950599] hover:bg-[#950599]"
                     : "text-[#333] dark:text-[#d8d8d8]"
@@ -314,41 +314,86 @@ function DropdownList({
                     {item?._source?.title}
                   </span>
                 </div>
-                <div className="flex-1 min-w-[180px] h-full text-[12px] flex gap-2 items-center justify-end relative">
-                  <span
-                    className={`text-[12px] truncate ${
-                      isSelected
-                        ? "text-[#DCDCDC]"
-                        : "text-[#999] dark:text-[#666]"
-                    }`}
-                  >
-                    {(item?._source?.category || "") +
-                      (item?._source?.subcategory
-                        ? `/${item?._source?.subcategory}`
-                        : "")}
-                  </span>
+                <div className="flex-1 text-right min-w-[160px] h-full pl-5 text-[12px] flex gap-2 items-center justify-end relative">
+                  {Object.entries(SearchData).length < 5 ? null : (
+                    <img
+                      className="w-4 h-4 cursor-pointer"
+                      src={getTypeIcon(item)}
+                      alt="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        goToTwoPage(item);
+                      }}
+                    />
+                  )}
+
                   {item?._source?.rich_categories ? (
-                    <div className="truncate flex gap-2">
-                      <img
-                        className="w-4 h-4 cursor-pointer"
-                        src={getRichIcon(item)}
-                        alt="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          goToTwoPage(item);
-                        }}
-                      />
-                      {item?._source?.rich_categories?.map((rich_item: any) => (
+                    <div className="flex items-center justify-end max-w-[calc(100%-20px)] whitespace-nowrap">
+                      {Object.entries(SearchData).length < 5 ? (
+                        <img
+                          className="w-4 h-4 mr-2 cursor-pointer"
+                          src={getRichIcon(item)}
+                          alt="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            goToTwoPage(item);
+                          }}
+                        />
+                      ) : null}
+                      <span
+                        className={`${
+                          isSelected ? "text-[#C8C8C8]" : "text-[#666]"
+                        } text-right truncate`}
+                      >
+                        {item?._source?.rich_categories?.map(
+                          (rich_item: any, index: number) => {
+                            if (
+                              item?._source?.rich_categories.length > 2 &&
+                              index ===
+                                item?._source?.rich_categories.length - 1
+                            )
+                              return "";
+                            else
+                              return (
+                                (index !== 0 ? "/" : "") + rich_item?.label
+                              );
+                          }
+                        )}
+                      </span>
+                      {item?._source?.rich_categories.length > 2 ? (
                         <span
                           className={`${
                             isSelected ? "text-[#C8C8C8]" : "text-[#666]"
-                          } text-right mr-1`}
+                          } text-right truncate`}
                         >
-                          {rich_item?.label}
+                          {"/" + item?._source?.rich_categories?.at(-1)?.label}
                         </span>
-                      ))}
+                      ) : null}
                     </div>
-                  ) : null}
+                  ) : item?._source?.category || item?._source?.subcategory ? (
+                    <span
+                      className={`text-[12px] truncate ${
+                        isSelected
+                          ? "text-[#DCDCDC]"
+                          : "text-[#999] dark:text-[#666]"
+                      }`}
+                    >
+                      {(item?._source?.category || "") +
+                        (item?._source?.subcategory
+                          ? `/${item?._source?.subcategory}`
+                          : "")}
+                    </span>
+                  ) : (
+                    <span
+                      className={`text-[12px] truncate ${
+                        isSelected
+                          ? "text-[#DCDCDC]"
+                          : "text-[#999] dark:text-[#666]"
+                      }`}
+                    >
+                      {item?._source?.type || ""}
+                    </span>
+                  )}
 
                   {isSelected ? (
                     <div
