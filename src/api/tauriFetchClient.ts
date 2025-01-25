@@ -47,14 +47,20 @@ export const tauriFetch = async <T = any>({
     const auth = authStore?.state?.auth
     console.log("auth", auth)
 
+    if (baseURL.endsWith("/")) {
+      baseURL = baseURL.slice(0, -1);
+    }
 
-    url = baseURL + url;
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      // If not, prepend the defaultPrefix
+      url = baseURL + url;
+    }
 
     if (method !== "GET") {
       headers["Content-Type"] = "application/json";
     }
 
-    headers["X-API-TOKEN"] = headers["X-API-TOKEN"] || auth?.token || "";
+    headers["X-API-TOKEN"] = headers["X-API-TOKEN"] || (auth && auth[endpoint_http]?.token) || "";
 
     // debug API
     const requestInfo = {

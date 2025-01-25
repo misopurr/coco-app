@@ -10,14 +10,17 @@ import { useAppStore } from "@/stores/appStore";
 import { useAuthStore } from "@/stores/authStore";
 import { tauriFetch } from "@/api/tauriFetchClient";
 import ApiDetails from "@/components/AppAI/ApiDetails";
+import { useConnectStore } from "@/stores/connectStore";
 
 export default function DesktopApp() {
   const initializeListeners = useAppStore((state) => state.initializeListeners);
   const initializeListeners_auth = useAuthStore(
     (state) => state.initializeListeners
   );
-  const setConnectorData = useAppStore((state) => state.setConnectorData);
-  const setDatasourceData = useAppStore((state) => state.setDatasourceData);
+  const setConnectorData = useConnectStore((state) => state.setConnectorData);
+  const setDatasourceData = useConnectStore((state) => state.setDatasourceData);
+
+  const endpoint_http = useAppStore((state) => state.endpoint_http);
 
   useEffect(() => {
     initializeListeners();
@@ -35,7 +38,7 @@ export default function DesktopApp() {
       });
       console.log("connector", response);
       const data = response.data?.hits?.hits || [];
-      setConnectorData(data);
+      setConnectorData(data, endpoint_http);
     } catch (error) {
       console.error("Failed to fetch user data:", error);
     }
@@ -49,7 +52,7 @@ export default function DesktopApp() {
       });
       console.log("datasource", response);
       const data = response.data?.hits?.hits || [];
-      setDatasourceData(data);
+      setDatasourceData(data, endpoint_http);
     } catch (error) {
       console.error("Failed to fetch user data:", error);
     }
@@ -91,7 +94,7 @@ export default function DesktopApp() {
   return (
     <div
       data-tauri-drag-region
-      className={`w-[680px] h-[590px] m-auto rounded-xl overflow-hidden relative border border-[#E6E6E6] dark:border-[#272626] ${
+      className={`w-full h-full m-auto rounded-xl overflow-hidden relative border border-[#E6E6E6] dark:border-[#272626] ${
         isTransitioned
           ? "bg-chat_bg_light dark:bg-chat_bg_dark"
           : "bg-search_bg_light dark:bg-search_bg_dark"

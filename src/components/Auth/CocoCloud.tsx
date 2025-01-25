@@ -1,7 +1,18 @@
-import { useState, useEffect } from "react";
-import { Cloud } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import {
+  RefreshCcw,
+  Globe,
+  PackageOpen,
+  GitFork,
+  CalendarSync,
+  Trash2,
+} from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import {
+  onOpenUrl,
+  getCurrent as getCurrentDeepLinkUrls,
+} from "@tauri-apps/plugin-deep-link";
 
 import { UserProfile } from "./UserProfile";
 import { DataSourcesList } from "./DataSourcesList";
@@ -11,84 +22,105 @@ import { OpenBrowserURL } from "@/utils/index";
 import { useAppStore } from "@/stores/appStore";
 import { useAuthStore } from "@/stores/authStore";
 import { tauriFetch } from "@/api/tauriFetchClient";
-import {
-  onOpenUrl,
-  getCurrent as getCurrentDeepLinkUrls,
-} from "@tauri-apps/plugin-deep-link";
+import { useConnectStore } from "@/stores/connectStore";
+import bannerImg from "@/assets/images/coco-cloud-banner.jpeg";
 
 export default function CocoCloud() {
   const [error, setError] = useState<string | null>(null);
 
-  const [isConnect] = useState(true);
+  const [isConnect, setIsConnect] = useState(true);
 
   const app_uid = useAppStore((state) => state.app_uid);
   const setAppUid = useAppStore((state) => state.setAppUid);
-  const endpoint_http = useAppStore((state) => state.endpoint_http);
+  const setEndpoint = useAppStore((state) => state.setEndpoint);
+  const endpoint = useAppStore((state) => state.endpoint);
 
-  const { auth, setAuth } = useAuthStore();
+  const auth = useAuthStore((state) => state.auth);
+  const setAuth = useAuthStore((state) => state.setAuth);
   const userInfo = useAuthStore((state) => state.userInfo);
   const setUserInfo = useAuthStore((state) => state.setUserInfo);
+  const defaultService = useConnectStore((state) => state.defaultService);
+  const currentService = useConnectStore((state) => state.currentService);
+  const setDefaultService = useConnectStore((state) => state.setDefaultService);
+  const setCurrentService = useConnectStore((state) => state.setCurrentService);
+  const deleteOtherService = useConnectStore(
+    (state) => state.deleteOtherService
+  );
 
   const [loading, setLoading] = useState(false);
+  const [refreshLoading, setRefreshLoading] = useState(false);
 
-  const getProfile = async () => {
+  useEffect(() => {
+    console.log("currentService", currentService);
+    setLoading(false);
+    setRefreshLoading(false);
+    setError(null);
+    setEndpoint(currentService.endpoint);
+    setIsConnect(true);
+  }, [JSON.stringify(currentService)]);
+
+  const getProfile = useCallback(async () => {
     const response: any = await tauriFetch({
-      url: `/provider/account/profile`,
+      url: `/account/profile`,
       method: "GET",
     });
     console.log("getProfile", response);
-    setUserInfo(response.data || {});
-  };
+    setUserInfo(response.data || {}, endpoint);
+  }, [endpoint]);
 
-  const handleOAuthCallback = async (
-    code: string | null,
-    provider: string | null
-  ) => {
-    if (!code) {
-      setError("No authorization code received");
-      return;
-    }
-
-    try {
-      console.log("Handling OAuth callback:", { code, provider });
-      const response: any = await tauriFetch({
-        url: `/auth/request_access_token?request_id=${app_uid}`,
-        method: "GET",
-        headers: {
-          "X-API-TOKEN": code,
-        },
-      });
-      console.log(
-        "response",
-        `/auth/request_access_token?request_id=${app_uid}`,
-        code,
-        response
-      );
-
-      if (response.data?.access_token) {
-        await setAuth({
-          token: response.data?.access_token,
-          expires: response.data?.expire_at,
-          plan: { upgraded: false, last_checked: 0 },
-        });
-
-        getProfile();
-      } else {
-        setError("Sign in failed: " + response.data?.error?.reason);
+  const handleOAuthCallback = useCallback(
+    async (code: string | null, provider: string | null) => {
+      if (!code) {
+        setError("No authorization code received");
+        return;
       }
 
-      getCurrentWindow()
-        .setFocus()
-        .catch(() => {});
-    } catch (e) {
-      console.error("Sign in failed:", error);
-      setError("Sign in failed: catch");
-      await setAuth(undefined);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        console.log("Handling OAuth callback:", { code, provider });
+        const response: any = await tauriFetch({
+          url: `/auth/request_access_token?request_id=${app_uid}`,
+          method: "GET",
+          headers: {
+            "X-API-TOKEN": code,
+          },
+        });
+        console.log(
+          "response",
+          `/auth/request_access_token?request_id=${app_uid}`,
+          code,
+          response
+        );
+
+        if (response.data?.access_token) {
+          await setAuth(
+            {
+              token: response.data?.access_token,
+              expires: response.data?.expire_at,
+              plan: { upgraded: false, last_checked: 0 },
+            },
+            endpoint
+          );
+
+          getProfile();
+        } else {
+          await setAuth(undefined, endpoint);
+          setError("Sign in failed: " + response.data?.error?.reason);
+        }
+
+        getCurrentWindow()
+          .setFocus()
+          .catch(() => {});
+      } catch (e) {
+        console.error("Sign in failed:", error);
+        setError("Sign in failed: catch");
+        await setAuth(undefined, endpoint);
+        throw error;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [app_uid, endpoint]
+  );
 
   const handleUrl = (url: string) => {
     try {
@@ -108,7 +140,6 @@ export default function CocoCloud() {
       //   default:
       //     console.log("Unhandled deep link path:", urlObject.pathname);
       // }
-
     } catch (err) {
       console.error("Failed to parse URL:", err);
       setError("Invalid URL format");
@@ -135,87 +166,167 @@ export default function CocoCloud() {
     return () => {
       unlisten.then((fn) => fn());
     };
-  }, []);
+  }, [app_uid]);
 
-  function LoginClick() {
+  const LoginClick = useCallback(() => {
+    if (loading) return;
+    setAuth(undefined, endpoint);
+
     let uid = uuidv4();
     setAppUid(uid);
 
+    console.log("LoginClick", uid, currentService.auth_provider.sso.url);
+
     OpenBrowserURL(
-      `${endpoint_http}/sso/login/?provider=coco-cloud&product=coco&request_id=${uid}`
+      `${currentService.auth_provider.sso.url}/?provider=coco-cloud&product=coco&request_id=${uid}`
     );
 
     setLoading(true);
+  }, [JSON.stringify(currentService)]);
+
+  function goToHref(url: string) {
+    OpenBrowserURL(url);
   }
 
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+  const refreshClick = useCallback(() => {
+    setRefreshLoading(true);
+    tauriFetch({
+      url: `/provider/_info`,
+      method: "GET",
+    })
+      .then((res) => {
+        setEndpoint(res.data.endpoint);
+        setCurrentService(res.data || {});
+        if (res.data?.endpoint === "https://coco.infini.cloud/") {
+          setDefaultService(res.data);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+      })
+      .finally(() => {
+        setRefreshLoading(false);
+      });
+  }, [JSON.stringify(defaultService)]);
 
-      <main className="flex-1">
+  function addService() {
+    setIsConnect(false);
+  }
+
+  const deleteClick = useCallback(() => {
+    deleteOtherService(currentService);
+    setAuth(undefined, endpoint);
+    setUserInfo({}, endpoint);
+  }, [JSON.stringify(currentService), endpoint]);
+
+  return (
+    <div className="flex bg-gray-50 dark:bg-gray-900">
+      <Sidebar addService={addService} />
+
+      <main className="flex-1 p-4 py-8">
         <div>
           {error && (
-            <div className="text-red-500 dark:text-red-400 p-4">
+            <div className="text-red-500 dark:text-red-400 mb-4">
               Error: {error}
             </div>
           )}
         </div>
 
         {isConnect ? (
-          <div className="max-w-4xl mx-auto px-4 py-8">
-            <div className="flex items-center justify-between mb-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="w-full rounded-[4px] bg-[rgba(229,229,229,1)] dark:bg-gray-800 mb-6">
+              <img
+                src={currentService.provider.banner || bannerImg}
+                alt="banner"
+              />
+            </div>
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2 px-4 py-2 bg-white rounded-md border border-gray-200">
-                  <Cloud className="w-5 h-5 text-blue-500" />
-                  <span className="font-medium text-[#333]">Coco Cloud</span>
+                <div className="flex items-center text-gray-900 dark:text-white font-medium">
+                  {currentService.name}
                 </div>
-                <span className="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-md">
-                  Available
-                </span>
               </div>
-              <button className="p-2 text-gray-500 hover:text-gray-700">
-                <Cloud className="w-5 h-5" />
-              </button>
+              <div className="flex gap-2">
+                <button
+                  className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 rounded-[6px] bg-white dark:bg-gray-800 border border-[rgba(228,229,239,1)] dark:border-gray-700"
+                  onClick={() => goToHref(currentService.provider.website)}
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 rounded-[6px] bg-white dark:bg-gray-800 border border-[rgba(228,229,239,1)] dark:border-gray-700"
+                  onClick={() => refreshClick()}
+                >
+                  <RefreshCcw
+                    className={`w-3.5 h-3.5 ${
+                      refreshLoading ? "animate-spin" : ""
+                    }`}
+                  />
+                </button>
+                {currentService.endpoint !== defaultService.endpoint ? (
+                  <button
+                    className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 rounded-[6px] bg-white dark:bg-gray-800 border border-[rgba(228,229,239,1)] dark:border-gray-700"
+                    onClick={() => deleteClick()}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-[#ff4747]" />
+                  </button>
+                ) : null}
+              </div>
             </div>
 
             <div className="mb-8">
-              <div className="text-sm text-gray-500 mb-4">
-                <span>Service provision: INFINI Labs</span>
+              <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 flex">
+                <span className="flex items-center gap-1">
+                  <PackageOpen className="w-4 h-4" />{" "}
+                  {currentService.provider.name}
+                </span>
                 <span className="mx-4">|</span>
-                <span>Version Number: v2.3.0</span>
+                <span className="flex items-center gap-1">
+                  <GitFork className="w-4 h-4" />{" "}
+                  {currentService.version.number}
+                </span>
                 <span className="mx-4">|</span>
-                <span>Update time: 2023-05-12</span>
+                <span className="flex items-center gap-1">
+                  <CalendarSync className="w-4 h-4" /> {currentService.updated}
+                </span>
               </div>
-              <p className="text-gray-600 leading-relaxed">
-                Coco Cloud provides users with a cloud storage and data
-                integration platform that supports account registration and data
-                source management. Users can integrate multiple data sources
-                (such as Google Drive, yuque, GitHub, etc.), easily access and
-                search for files, documents and codes across platforms, and
-                achieve efficient data collaboration and management.
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                {currentService.provider.description}
               </p>
             </div>
 
-            <div className="mb-8">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">
-                Account Information
-              </h2>
-              {auth ? (
-                <UserProfile userInfo={userInfo} />
-              ) : (
-                <button
-                  className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-                  onClick={LoginClick}
-                >
-                  {loading ? "Login..." : "Login"}
-                </button>
-              )}
-            </div>
+            {currentService.auth_provider.sso.url ? (
+              <div className="mb-8">
+                <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                  Account Information
+                </h2>
+                {auth && auth[endpoint] ? (
+                  <UserProfile userInfo={userInfo[endpoint]} />
+                ) : (
+                  <div>
+                    <button
+                      className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors mb-3"
+                      onClick={LoginClick}
+                    >
+                      {loading ? "Login..." : "Login"}
+                    </button>
+                    <button
+                      className="text-xs text-[#0096FB] dark:text-blue-400 block"
+                      onClick={() =>
+                        goToHref(currentService.provider.privacy_policy)
+                      }
+                    >
+                      EULA | Privacy Policy
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : null}
 
-            {auth ? <DataSourcesList /> : null}
+            {auth && auth[endpoint] ? <DataSourcesList /> : null}
           </div>
         ) : (
-          <ConnectService />
+          <ConnectService setIsConnect={setIsConnect} />
         )}
       </main>
     </div>
