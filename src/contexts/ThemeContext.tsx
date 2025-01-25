@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { isTauri, invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { emit, listen } from "@tauri-apps/api/event";
+import { listen } from "@tauri-apps/api/event";
 
 import { AppTheme, WindowTheme } from "../utils/tauri";
 import { useThemeStore } from "../stores/themeStore";

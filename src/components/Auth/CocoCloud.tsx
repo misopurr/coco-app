@@ -92,7 +92,7 @@ export default function CocoCloud() {
         );
 
         if (response.data?.access_token) {
-          await setAuth(
+          setAuth(
             {
               token: response.data?.access_token,
               expires: response.data?.expire_at,
@@ -103,7 +103,7 @@ export default function CocoCloud() {
 
           getProfile();
         } else {
-          await setAuth(undefined, endpoint);
+          setAuth(undefined, endpoint);
           setError("Sign in failed: " + response.data?.error?.reason);
         }
 
@@ -113,7 +113,7 @@ export default function CocoCloud() {
       } catch (e) {
         console.error("Sign in failed:", error);
         setError("Sign in failed: catch");
-        await setAuth(undefined, endpoint);
+        setAuth(undefined, endpoint);
         throw error;
       } finally {
         setLoading(false);
@@ -224,13 +224,13 @@ export default function CocoCloud() {
       <Sidebar addService={addService} />
 
       <main className="flex-1 p-4 py-8">
-        <div>
+        {/* <div>
           {error && (
             <div className="text-red-500 dark:text-red-400 mb-4">
               Error: {error}
             </div>
           )}
-        </div>
+        </div> */}
 
         {isConnect ? (
           <div className="max-w-4xl mx-auto">
