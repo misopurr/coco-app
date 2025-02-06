@@ -9,8 +9,17 @@ const ENDPOINT_CHANGE_EVENT = 'endpoint-changed';
 export type IAppStore = {
   showTooltip: boolean;
   setShowTooltip: (showTooltip: boolean) => void;
-  app_uid: string;
-  setAppUid: (app_uid: string) => void,
+
+  error: string;
+  setError: (message: any) => void,
+
+  ssoRequestID: string;
+  setSSORequestID: (ssoRequestID: string) => void,
+
+  // ssoServerID: string;
+  // setSSOServerID: (ssoServerID: string) => void,
+
+
   endpoint: AppEndpoint,
   endpoint_http: string,
   endpoint_websocket: string,
@@ -23,9 +32,13 @@ export const useAppStore = create<IAppStore>()(
     (set) => ({
       showTooltip: true,
       setShowTooltip: (showTooltip: boolean) => set({ showTooltip }),
-      app_uid: "",
-      setAppUid: (app_uid: string) => set({ app_uid }),
-      endpoint: "https://coco.infini.cloud",
+      error: "",
+      setError: (message: any) => set({ error: message as string }),
+      ssoRequestID: "",
+      setSSORequestID: (ssoRequestID: string) => set({ ssoRequestID }),
+      //  ssoServerID: "",
+      // setSSOServerID: (ssoServerID: string) => set({ ssoServerID }),
+      endpoint: "https://coco.infini.cloud/",
       endpoint_http: "https://coco.infini.cloud",
       endpoint_websocket: "wss://coco.infini.cloud/ws",
       setEndpoint: async (endpoint: AppEndpoint) => {
@@ -60,7 +73,9 @@ export const useAppStore = create<IAppStore>()(
       name: "app-store",
       partialize: (state) => ({
         showTooltip: state.showTooltip,
-        app_uid: state.app_uid,
+        ssoRequestID: state.ssoRequestID,
+        // ssoServerID: state.ssoServerID,
+        error: state.error,
         endpoint: state.endpoint,
         endpoint_http: state.endpoint_http,
         endpoint_websocket: state.endpoint_websocket,

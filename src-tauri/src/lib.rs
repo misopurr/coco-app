@@ -1,12 +1,21 @@
 mod autostart;
+mod common;
+mod server;
 mod shortcut;
+mod util;
 
+use crate::server::servers::{load_or_insert_default_server, load_servers_token};
 use autostart::{change_autostart, enable_autostart};
 #[cfg(target_os = "macos")]
 use tauri::ActivationPolicy;
-use tauri::{AppHandle, Emitter, Listener, Manager, WebviewWindow};
+use tauri::{AppHandle, Emitter, Listener, Manager, Runtime, WebviewWindow};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_deep_link::DeepLinkExt;
+use tokio::runtime::Runtime as RT; // Add this import
+// Add this import
+
+/// Tauri store name
+pub(crate) const COCO_TAURI_STORE: &str = "coco_tauri_store";
 
 #[tauri::command]
 fn change_window_height(handle: AppHandle, height: u32) {
@@ -80,12 +89,39 @@ pub fn run() {
             change_autostart,
             hide_coco,
             switch_tray_icon,
-            // show_panel,
-            // hide_panel,
-            // close_panel
+            server::servers::add_coco_server,
+            server::servers::remove_coco_server,
+            server::servers::list_coco_servers,
+            server::servers::logout_coco_server,
+            server::servers::refresh_coco_server_info,
+            server::auth::handle_sso_callback,
+            server::profile::get_user_profiles,
+            server::datasource::get_datasources_by_server,
+            server::connector::get_connectors_by_server,
+            server::search::query_coco_servers,
+            // server::get_coco_server_health_info,
+            // server::get_coco_servers_health_info,
+            // server::get_user_profiles,
+            // server::get_coco_server_datasources,
+            // server::get_coco_server_connectors
         ])
         .setup(|app| {
-            init(app.app_handle());
+
+
+            // Get app handle
+            let app_handle = app.handle().clone();
+
+            // Create a single Tokio runtime instance
+            let rt = RT::new().expect("Failed to create Tokio runtime");
+
+            // Use the runtime to spawn the async initialization tasks
+            rt.spawn(async move {
+                dbg!("Running async initialization tasks");
+                init(&app_handle).await; // Pass a reference to `app_handle`
+                dbg!("Async initialization tasks completed");
+            });
+
+
 
             shortcut::enable_shortcut(app);
             enable_tray(app);
@@ -108,13 +144,26 @@ pub fn run() {
                 dbg!(event.urls());
             });
 
+
             Ok(())
         })
         .run(ctx)
         .expect("error while running tauri application");
 }
 
-fn init(_app_handle: &AppHandle) {
+pub async fn init<R: Runtime>(app_handle: &AppHandle<R>) {
+    dbg!("Initializing...");
+    // Await the async functions to load the servers and tokens
+    if let Err(err) = load_or_insert_default_server(app_handle).await {
+        eprintln!("Failed to load servers: {}", err);
+    }
+
+    if let Err(err) = load_servers_token(app_handle).await {
+        eprintln!("Failed to load server tokens: {}", err);
+    }
+
+    dbg!("Initialization completed");
+
     // let window: WebviewWindow = app_handle.get_webview_window("main").unwrap();
 
     // let panel = window.to_panel().unwrap();
@@ -231,15 +280,15 @@ fn enable_tray(app: &mut tauri::App) {
 
     let quit_i = MenuItem::with_id(app, "quit", "Quit Coco", true, None::<&str>).unwrap();
     let settings_i = MenuItem::with_id(app, "settings", "Settings...", true, None::<&str>).unwrap();
-    let open_i = MenuItem::with_id(app, "open", "Open Coco", true, None::<&str>).unwrap();
-    let about_i = MenuItem::with_id(app, "about", "About Coco", true, None::<&str>).unwrap();
+    let open_i = MenuItem::with_id(app, "open", "Show Coco", true, None::<&str>).unwrap();
+    // let about_i = MenuItem::with_id(app, "about", "About Coco", true, None::<&str>).unwrap();
     // let hide_i = MenuItem::with_id(app, "hide", "Hide Coco", true, None::<&str>).unwrap();
 
     let menu = MenuBuilder::new(app)
         .item(&open_i)
         .separator()
         // .item(&hide_i)
-        .item(&about_i)
+        // .item(&about_i)
         .item(&settings_i)
         .separator()
         .item(&quit_i)
