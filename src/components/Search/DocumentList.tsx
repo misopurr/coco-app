@@ -7,6 +7,7 @@ import { useSearchStore } from "@/stores/searchStore";
 import { SearchHeader } from "./SearchHeader";
 import noDataImg from "@/assets/coconut-tree.png";
 import ItemIcon from "@/components/Common/Icons/ItemIcon";
+import { metaOrCtrlKey } from "@/utils/keyboardUtils";
 
 interface DocumentListProps {
   onSelectDocument: (id: string) => void;
@@ -148,7 +149,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
             return newIndex;
           });
         }
-      } else if (e.key === "Meta") {
+      } else if (e.key === metaOrCtrlKey()) {
         e.preventDefault();
       }
 
