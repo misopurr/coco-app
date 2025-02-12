@@ -9,15 +9,15 @@ import type { Chat, Message } from "./types";
 import { tauriFetch } from "../../api/tauriFetchClient";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import { useWindows }  from "../../hooks/useWindows";
-import { clientEnv } from "@/utils/env";
-import { useAppStore } from '@/stores/appStore';
+// import { clientEnv } from "@/utils/env";
+// import { useAppStore } from '@/stores/appStore';
 
 interface ChatAIProps {}
 
 export default function ChatAI({}: ChatAIProps) {
   const { closeWin } = useWindows();
 
-  const appStore = useAppStore();
+  // const appStore = useAppStore();
 
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChat, setActiveChat] = useState<Chat>();
@@ -39,7 +39,7 @@ export default function ChatAI({}: ChatAIProps) {
 
   console.log("index useWebSocket")
   const { messages, setMessages } = useWebSocket(
-    `${appStore.endpoint_websocket || clientEnv.COCO_WEBSOCKET_URL}`,
+    "wss://coco.infini.cloud/ws",
     (msg) => {
       if (msg.includes("websocket-session-id")) {
         const array = msg.split(" ");
@@ -107,7 +107,7 @@ export default function ChatAI({}: ChatAIProps) {
       const response = await tauriFetch({
         url: "/chat/_history",
         method: "GET",
-        baseURL: appStore.endpoint_http,
+        baseURL: "https://coco.infini.cloud",
       });
       console.log("_history", response);
       const hits = response.data?.hits?.hits || [];
@@ -138,7 +138,7 @@ export default function ChatAI({}: ChatAIProps) {
       const response = await tauriFetch({
         url: "/chat/_new",
         method: "POST",
-        baseURL: appStore.endpoint_http,
+        baseURL: "https://coco.infini.cloud",
       });
       console.log("_new", response);
       const newChat: Chat = response.data;
@@ -171,7 +171,7 @@ export default function ChatAI({}: ChatAIProps) {
           "WEBSOCKET-SESSION-ID": websocketId,
         },
         body: JSON.stringify({ message: content }),
-        baseURL: appStore.endpoint_http,
+        baseURL: "https://coco.infini.cloud",
       });
       console.log("_send", response, websocketId);
       setCurId(response.data[0]?._id);
@@ -193,7 +193,7 @@ export default function ChatAI({}: ChatAIProps) {
       const response = await tauriFetch({
         url: `/chat/${chat._id}/_history`,
         method: "GET",
-        baseURL: appStore.endpoint_http,
+        baseURL: "https://coco.infini.cloud",
       });
       console.log("id_history", response);
       const hits = response.data?.hits?.hits || [];
@@ -213,7 +213,7 @@ export default function ChatAI({}: ChatAIProps) {
       const response = await tauriFetch({
         url: `/chat/${activeChat._id}/_close`,
         method: "POST",
-        baseURL: appStore.endpoint_http,
+        baseURL: "https://coco.infini.cloud",
       });
       console.log("_close", response);
     } catch (error) {
@@ -227,7 +227,7 @@ export default function ChatAI({}: ChatAIProps) {
       const response = await tauriFetch({
         url: `/chat/${chat._id}/_open`,
         method: "POST",
-        baseURL: appStore.endpoint_http,
+        baseURL: "https://coco.infini.cloud",
       });
       console.log("_open", response);
       chatHistory(response.data);
@@ -242,7 +242,7 @@ export default function ChatAI({}: ChatAIProps) {
       const response = await tauriFetch({
         url: `/chat/${activeChat._id}/_cancel`,
         method: "POST",
-        baseURL: appStore.endpoint_http,
+        baseURL: "https://coco.infini.cloud",
       });
       console.log("_cancel", response);
     } catch (error) {
