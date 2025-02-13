@@ -21,6 +21,7 @@ interface ChatAIProps {
   inputValue: string;
   isTransitioned: boolean;
   changeInput: (val: string) => void;
+  isSearchActive?: boolean;
 }
 
 export interface ChatAIRef {
@@ -31,7 +32,7 @@ export interface ChatAIRef {
 }
 
 const ChatAI = forwardRef<ChatAIRef, ChatAIProps>(
-  ({ inputValue, isTransitioned, changeInput }, ref) => {
+  ({ inputValue, isTransitioned, changeInput, isSearchActive }, ref) => {
     useImperativeHandle(ref, () => ({
       init: init,
       cancelChat: cancelChat,
@@ -59,11 +60,12 @@ const ChatAI = forwardRef<ChatAIRef, ChatAIProps>(
     const curIdRef = useRef(curId);
     curIdRef.current = curId;
 
-    console.log("chat useWebSocket", clientEnv.COCO_WEBSOCKET_URL)
+    // console.log("chat useWebSocket", clientEnv.COCO_WEBSOCKET_URL)
     const { messages, setMessages, connected, reconnect } = useWebSocket(
-      "wss://coco.infini.cloud/ws",
+      clientEnv.COCO_WEBSOCKET_URL,
       (msg) => {
-        console.log("msg", msg);
+        // console.log("msg", msg);
+
         if (msg.includes("websocket-session-id")) {
           const array = msg.split(" ");
           setWebsocketId(array[2]);
@@ -141,7 +143,6 @@ const ChatAI = forwardRef<ChatAIRef, ChatAIProps>(
         const response = await tauriFetch({
           url: "/chat/_new",
           method: "POST",
-          baseURL: "https://coco.infini.cloud",
         });
         console.log("_new", response);
         const newChat: Chat = response.data;
@@ -167,13 +168,12 @@ const ChatAI = forwardRef<ChatAIRef, ChatAIProps>(
       if (!newChat?._id || !content) return;
       try {
         const response = await tauriFetch({
-          url: `/chat/${newChat?._id}/_send`,
+          url: `/chat/${newChat?._id}/_send?search=${isSearchActive}`,
           method: "POST",
           headers: {
             "WEBSOCKET-SESSION-ID": websocketId,
           },
           body: JSON.stringify({ message: content }),
-          baseURL: "https://coco.infini.cloud",
         });
         console.log("_send", response, websocketId);
         setCurId(response.data[0]?._id);
@@ -196,7 +196,6 @@ const ChatAI = forwardRef<ChatAIRef, ChatAIProps>(
         const response = await tauriFetch({
           url: `/chat/${activeChat._id}/_close`,
           method: "POST",
-          baseURL: "https://coco.infini.cloud",
         });
         console.log("_close", response);
       } catch (error) {
@@ -212,7 +211,6 @@ const ChatAI = forwardRef<ChatAIRef, ChatAIProps>(
         const response = await tauriFetch({
           url: `/chat/${activeChat._id}/_cancel`,
           method: "POST",
-          baseURL: "https://coco.infini.cloud",
         });
 
         console.log("_cancel", response);

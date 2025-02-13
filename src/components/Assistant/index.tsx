@@ -9,8 +9,9 @@ import type { Chat, Message } from "./types";
 import { tauriFetch } from "../../api/tauriFetchClient";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import { useWindows }  from "../../hooks/useWindows";
-// import { clientEnv } from "@/utils/env";
+import { clientEnv } from "@/utils/env";
 // import { useAppStore } from '@/stores/appStore';
+import ApiDetails from "@/components/Common/ApiDetails";
 
 interface ChatAIProps {}
 
@@ -31,16 +32,20 @@ export default function ChatAI({}: ChatAIProps) {
 
   const [curId, setCurId] = useState("");
 
+  const [isSearchActive, setIsSearchActive] = useState(false);
+
   const curChatEndRef = useRef(curChatEnd);
   curChatEndRef.current = curChatEnd;
 
   const curIdRef = useRef(curId);
   curIdRef.current = curId;
 
-  console.log("index useWebSocket")
+  console.log("index useWebSocket", clientEnv.COCO_WEBSOCKET_URL,)
   const { messages, setMessages } = useWebSocket(
-    "wss://coco.infini.cloud/ws",
+    clientEnv.COCO_WEBSOCKET_URL,
     (msg) => {
+      msg = msg.replace(/<think>/g, "AI is thinking...").replace(/<\/think>/g, "");
+
       if (msg.includes("websocket-session-id")) {
         const array = msg.split(" ");
         setWebsocketId(array[2]);
@@ -107,7 +112,6 @@ export default function ChatAI({}: ChatAIProps) {
       const response = await tauriFetch({
         url: "/chat/_history",
         method: "GET",
-        baseURL: "https://coco.infini.cloud",
       });
       console.log("_history", response);
       const hits = response.data?.hits?.hits || [];
@@ -138,7 +142,6 @@ export default function ChatAI({}: ChatAIProps) {
       const response = await tauriFetch({
         url: "/chat/_new",
         method: "POST",
-        baseURL: "https://coco.infini.cloud",
       });
       console.log("_new", response);
       const newChat: Chat = response.data;
@@ -165,13 +168,12 @@ export default function ChatAI({}: ChatAIProps) {
     if (!activeChat?._id) return;
     try {
       const response = await tauriFetch({
-        url: `/chat/${activeChat?._id}/_send`,
+        url: `/chat/${activeChat?._id}/_send?search=${isSearchActive}`,
         method: "POST",
         headers: {
           "WEBSOCKET-SESSION-ID": websocketId,
         },
         body: JSON.stringify({ message: content }),
-        baseURL: "https://coco.infini.cloud",
       });
       console.log("_send", response, websocketId);
       setCurId(response.data[0]?._id);
@@ -193,7 +195,6 @@ export default function ChatAI({}: ChatAIProps) {
       const response = await tauriFetch({
         url: `/chat/${chat._id}/_history`,
         method: "GET",
-        baseURL: "https://coco.infini.cloud",
       });
       console.log("id_history", response);
       const hits = response.data?.hits?.hits || [];
@@ -213,7 +214,6 @@ export default function ChatAI({}: ChatAIProps) {
       const response = await tauriFetch({
         url: `/chat/${activeChat._id}/_close`,
         method: "POST",
-        baseURL: "https://coco.infini.cloud",
       });
       console.log("_close", response);
     } catch (error) {
@@ -227,7 +227,6 @@ export default function ChatAI({}: ChatAIProps) {
       const response = await tauriFetch({
         url: `/chat/${chat._id}/_open`,
         method: "POST",
-        baseURL: "https://coco.infini.cloud",
       });
       console.log("_open", response);
       chatHistory(response.data);
@@ -242,7 +241,6 @@ export default function ChatAI({}: ChatAIProps) {
       const response = await tauriFetch({
         url: `/chat/${activeChat._id}/_cancel`,
         method: "POST",
-        baseURL: "https://coco.infini.cloud",
       });
       console.log("_cancel", response);
     } catch (error) {
@@ -337,10 +335,14 @@ export default function ChatAI({}: ChatAIProps) {
                 setCurChatEnd(true);
                 setIsTyping(false);
               }}
+              isSearchActive={isSearchActive}
+              setIsSearchActive={() => setIsSearchActive((prev) => !prev)}
             />
           </div>
         </div>
       </div>
+
+      <ApiDetails/>
     </div>
   );
 }

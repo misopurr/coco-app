@@ -32,7 +32,7 @@ export default function DesktopApp() {
 
         const handleFocus = () => {
             // Optionally, show the window if needed when focus is regained
-            console.log("Window focused");
+            // console.log("Window focused");
         };
 
         window.addEventListener('blur', handleBlur);
@@ -51,6 +51,8 @@ export default function DesktopApp() {
     const [isChatMode, setIsChatMode] = useState(false);
     const [input, setInput] = useState("");
     const [isTransitioned, setIsTransitioned] = useState(false);
+
+    const [isSearchActive, setIsSearchActive] = useState(false);
 
     async function changeMode(value: boolean) {
         setIsChatMode(value);
@@ -107,6 +109,8 @@ export default function DesktopApp() {
                     changeMode={changeMode}
                     changeInput={changeInput}
                     reconnect={reconnect}
+                    isSearchActive={isSearchActive}
+                    setIsSearchActive={() => setIsSearchActive((prev) => !prev)}
                 />
             </div>
 
@@ -139,6 +143,7 @@ export default function DesktopApp() {
                         inputValue={input}
                         isTransitioned={isTransitioned}
                         changeInput={changeInput}
+                        isSearchActive={isSearchActive}
                     />
                 ) : null}
             </div>

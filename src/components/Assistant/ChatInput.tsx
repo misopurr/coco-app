@@ -1,4 +1,4 @@
-import { Library, Mic, Send, Plus } from "lucide-react";
+import { Mic, Send, Globe } from "lucide-react";
 import {
   useState,
   type FormEvent,
@@ -14,6 +14,8 @@ interface ChatInputProps {
   disabled: boolean;
   curChatEnd: boolean;
   disabledChange: () => void;
+  isSearchActive: boolean;
+  setIsSearchActive: () => void;
 }
 
 export function ChatInput({
@@ -21,7 +23,10 @@ export function ChatInput({
   disabled,
   curChatEnd,
   disabledChange,
+  isSearchActive,
+  setIsSearchActive,
 }: ChatInputProps) {
+
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -55,7 +60,9 @@ export function ChatInput({
     adjustTextareaHeight();
   }, [input]);
 
-  async function openChatAI() {}
+  const SearchClick = () => {
+    setIsSearchActive();
+  };
 
   return (
     <form onSubmit={handleSubmit} className="w-full rounded-xl overflow-hidden">
@@ -103,16 +110,35 @@ export function ChatInput({
         <div className="flex justify-between items-center p-2 rounded-xl overflow-hidden">
           <div className="flex gap-1 text-xs text-[#333] dark:text-[#d8d8d8]">
             <button
+              type="button"
+              className={`inline-flex items-center rounded-lg transition-colors relative py-1 px-[5px]`}
+              onClick={SearchClick}
+            >
+              <Globe
+                className={`w-4 h-4 mr-1 ${
+                  isSearchActive
+                    ? "text-[#0072FF] dark:text-[#0072FF]"
+                    : "text-[#000] dark:text-[#d8d8d8]"
+                }`}
+              />
+              <span className={isSearchActive ? "text-[#0072FF]" : ""}>
+                Search
+              </span>
+            </button>
+            {/* <button
+              type="button"
               className="inline-flex items-center p-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors "
               onClick={openChatAI}
             >
               <Library className="w-4 h-4 mr-1 text-[#000] dark:text-[#d8d8d8]" />
               Coco
             </button>
-            <button className="inline-flex items-center p-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-color">
+            <button 
+              type="button"
+              className="inline-flex items-center p-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-color">
               <Plus className="w-4 h-4 mr-1 text-[#000] dark:text-[#d8d8d8]" />
               Upload
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
