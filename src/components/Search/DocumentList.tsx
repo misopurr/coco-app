@@ -3,12 +3,13 @@ import { useInfiniteScroll } from "ahooks";
 import { isTauri, invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-shell";
 import { useTranslation } from "react-i18next";
+import { FixedSizeList } from "react-window";
 
 import { useSearchStore } from "@/stores/searchStore";
 import { SearchHeader } from "./SearchHeader";
 import noDataImg from "@/assets/coconut-tree.png";
-import ItemIcon from "@/components/Common/Icons/ItemIcon";
 import { metaOrCtrlKey } from "@/utils/keyboardUtils";
+import SearchListItem from "./SearchListItem";
 
 interface DocumentListProps {
   onSelectDocument: (id: string) => void;
@@ -21,6 +22,7 @@ interface DocumentListProps {
 }
 
 const PAGE_SIZE = 20;
+const ITEM_HEIGHT = 48; // SearchListItem height（padding + content）
 
 export const DocumentList: React.FC<DocumentListProps> = ({
   input,
@@ -37,6 +39,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [isKeyboardMode, setIsKeyboardMode] = useState(false);
+  const listRef = useRef<FixedSizeList>(null);
 
   const { data, loading } = useInfiniteScroll(
     async (d) => {
@@ -87,20 +90,11 @@ export const DocumentList: React.FC<DocumentListProps> = ({
     }
   );
 
-  const onFinally = (data: any, ref: any) => {
+  const onFinally = (data: any, _ref: any) => {
     if (data?.page === 1) return;
-    const parentRef = ref.current;
-    if (!parentRef || selectedItem === null) return;
+    if (selectedItem === null) return;
 
-    const targetElement = itemRefs.current[selectedItem];
-    if (!targetElement) return;
-
-    requestAnimationFrame(() => {
-      targetElement.scrollIntoView({
-        behavior: "instant",
-        block: "nearest",
-      });
-    });
+    listRef.current?.scrollToItem(selectedItem, "smart");
   };
 
   const onMouseEnter = useCallback(
@@ -141,6 +135,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
           setSelectedItem((prev) => {
             const newIndex = prev === null || prev === 0 ? 0 : prev - 1;
             getDocDetail(data.list[newIndex]?.document);
+            listRef.current?.scrollToItem(newIndex, "smart");
             return newIndex;
           });
         } else {
@@ -152,6 +147,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                 ? prev
                 : prev + 1;
             getDocDetail(data.list[newIndex]?.document);
+            listRef.current?.scrollToItem(newIndex, "smart");
             return newIndex;
           });
         }
@@ -191,20 +187,47 @@ export const DocumentList: React.FC<DocumentListProps> = ({
   }, [handleKeyDown]);
 
   useEffect(() => {
-    if (selectedItem !== null && itemRefs.current[selectedItem]) {
-      requestAnimationFrame(() => {
-        itemRefs.current[selectedItem]?.scrollIntoView({
-          behavior: "instant",
-          block: "nearest",
-        });
-      });
+    if (selectedItem !== null) {
+      listRef.current?.scrollToItem(selectedItem, "smart");
     }
   }, [selectedItem]);
 
+  const Row = useCallback(
+    ({ index, style }: { index: number; style: React.CSSProperties }) => {
+      const hit = data?.list[index];
+      if (!hit) return null;
+
+      const isSelected = selectedItem === index;
+      const item = hit.document;
+
+      return (
+        <div style={style}>
+          <SearchListItem
+            key={item.id + index}
+            itemRef={(el) => (itemRefs.current[index] = el)}
+            item={item}
+            isSelected={isSelected}
+            currentIndex={index}
+            onMouseEnter={() => onMouseEnter(index, item)}
+            onItemClick={() => {
+              if (item?.url) {
+                handleOpenURL(item?.url);
+              }
+            }}
+            showListRight={viewMode === "list"}
+          />
+        </div>
+      );
+    },
+    [data, selectedItem, viewMode, onMouseEnter, handleOpenURL]
+  );
+
   return (
-    <div className={`border-r border-gray-200 dark:border-gray-700 flex flex-col h-full ${
-      viewMode === "list" ? "w-[100%]" : "w-[50%]"
-    }`}>
+    <div
+      className={`border-r border-gray-200 dark:border-gray-700 flex flex-col h-full overflow-x-hidden ${
+        viewMode === "list" ? "w-[100%]" : "w-[50%]"
+      }`}
+    >
       <div className="px-2 flex-shrink-0">
         <SearchHeader
           total={total}
@@ -213,37 +236,35 @@ export const DocumentList: React.FC<DocumentListProps> = ({
         />
       </div>
 
-      <div ref={containerRef} className="flex-1 overflow-y-auto custom-scrollbar">
-        {data?.list.map((hit: any, index: number) => {
-          const isSelected = selectedItem === index;
-          const item = hit.document;
-          return (
-            <div
-              key={item.id + index}
-              ref={(el) => (itemRefs.current[index] = el)}
-              onMouseEnter={() => onMouseEnter(index, item)}
-              onClick={() => {
-                if (item?.url) {
-                  handleOpenURL(item?.url);
+      <div className="flex-1 overflow-hidden">
+        {data?.list && data.list.length > 0 ? (
+          <div ref={containerRef} style={{ height: '100%' }}>
+            <FixedSizeList
+              ref={listRef}
+              height={containerRef.current?.clientHeight || 400}
+              width="100%"
+              itemCount={data?.list.length}
+              itemSize={ITEM_HEIGHT}
+              overscanCount={5}
+              onScroll={({ scrollOffset, scrollUpdateWasRequested }) => {
+                if (!scrollUpdateWasRequested && containerRef.current) {
+                  const threshold = 100;
+                  const { scrollHeight, clientHeight } = containerRef.current;
+                  const remainingScroll = scrollHeight - (scrollOffset + clientHeight);
+                  if (remainingScroll <= threshold && !loading && data?.hasMore) {
+                    data?.loadMore && data.loadMore();
+                  }
                 }
               }}
-              className={`w-full px-2 py-2.5 text-sm flex items-center gap-3 rounded-lg transition-colors cursor-pointer ${
-                isSelected
-                  ? "text-white bg-[var(--coco-primary-color)] hover:bg-[var(--coco-primary-color)]"
-                  : "text-[#333] dark:text-[#d8d8d8]"
-              }`}
             >
-              <div className="flex gap-2 items-center flex-1 min-w-0">
-                <ItemIcon item={item} />
-                <span className={`text-sm truncate`}>{item?.title}</span>
-              </div>
-            </div>
-          );
-        })}
+              {Row}
+            </FixedSizeList>
+          </div>
+        ) : null}
 
         {loading && (
           <div className="flex justify-center py-4">
-            <span>{t('search.list.loading')}</span>
+            <span>{t("search.list.loading")}</span>
           </div>
         )}
 
@@ -252,13 +273,13 @@ export const DocumentList: React.FC<DocumentListProps> = ({
             data-tauri-drag-region
             className="h-full w-full flex flex-col items-center"
           >
-            <img 
-              src={noDataImg} 
-              alt={t('search.list.noDataAlt')} 
-              className="w-16 h-16 mt-24" 
+            <img
+              src={noDataImg}
+              alt={t("search.list.noDataAlt")}
+              className="w-16 h-16 mt-24"
             />
             <div className="mt-4 text-sm text-[#999] dark:text-[#666]">
-              {t('search.list.noResults')}
+              {t("search.list.noResults")}
             </div>
           </div>
         )}
