@@ -21,7 +21,7 @@
       "title": "Language",
       "description": "Choose your preferred language",
       "english": "English",
-      "chinese": "中文"
+      "chinese": "简体中文"
     },
     "tooltip": {
       "title": "Tooltip",
@@ -106,7 +106,9 @@
       "openChat": "Open Chat Window",
       "newChat": "New Chat",
       "connectionError": "Unable to connect to the server",
-      "reconnect": "Reconnect"
+      "reconnect": "Reconnect",
+      "greetings": "Hi! I’m Coco, nice to meet you. I can help answer your questions by tapping into the internet and your data sources. How can I assist you today?",
+      "timedout": "Request timed out. Please try again later."
     },
     "input": {
       "stopMessage": "Stop message",

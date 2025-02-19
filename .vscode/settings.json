@@ -34,6 +34,7 @@
     "tailwindcss",
     "tauri",
     "thiserror",
+    "timedout",
     "titlebar",
     "tpddns",
     "traptitech",
@@ -53,5 +54,6 @@
   },
   "i18n-ally.localesPaths": [
     "src/locales"
-  ]
+  ],
+  "i18n-ally.keystyle": "nested"
 }
