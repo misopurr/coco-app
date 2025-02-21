@@ -39,7 +39,10 @@ export const tauriFetch = async <T = any>({
   const addLog = useLogStore.getState().addLog;
 
   try {
-    console.log("baseURL", baseURL)
+    const appStore = JSON.parse(localStorage.getItem("app-store") || "{}");
+    console.log("baseURL", appStore.state?.endpoint_http)
+
+    baseURL = appStore.state?.endpoint_http || baseURL;
 
     const authStore = JSON.parse(localStorage.getItem("auth-store") || "{}")
     const auth = authStore?.state?.auth
@@ -58,7 +61,8 @@ export const tauriFetch = async <T = any>({
       headers["Content-Type"] = "application/json";
     }
 
-    const res: any = await invoke("get_server_token", {id: "default_coco_server"});
+    const server_id = appStore.state?.activeServer?.id || "default_coco_server"
+    const res: any = await invoke("get_server_token", {id: server_id});
     
     headers["X-API-TOKEN"] = headers["X-API-TOKEN"] || res?.access_token || undefined;
 

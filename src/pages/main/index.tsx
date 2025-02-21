@@ -16,20 +16,22 @@ export default function DesktopApp() {
     (state) => state.initializeListeners
   );
 
+  const isPinned = useAppStore((state) => state.isPinned);
+
   useEffect(() => {
     initializeListeners();
     initializeListeners_auth();
 
     // Listen for window focus and blur events
-    const handleBlur = () => {
+    const handleBlur = async () => {
       console.log("Window blurred");
-      invoke("hide_coco")
-        .then(() => {
-          console.log("Hide Coco");
-        })
-        .finally(() => {
-          console.log("Hide Coco");
-        });
+      if (isPinned) {
+        return;
+      }
+
+      invoke("hide_coco").then(() => {
+        console.log("Hide Coco");
+      });
     };
 
     const handleFocus = () => {
@@ -45,7 +47,7 @@ export default function DesktopApp() {
       window.removeEventListener("blur", handleBlur);
       window.removeEventListener("focus", handleFocus);
     };
-  }, []);
+  }, [isPinned]);
 
   const chatAIRef = useRef<ChatAIRef>(null);
 

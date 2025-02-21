@@ -52,7 +52,9 @@ struct Payload {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut ctx = tauri::generate_context!();
-
+    // Initialize logger
+    env_logger::init();
+    
     let mut app_builder = tauri::Builder::default();
 
     #[cfg(desktop)]
@@ -63,7 +65,8 @@ pub fn run() {
         }));
     }
 
-    app_builder = app_builder.plugin(tauri_plugin_http::init())
+    app_builder = app_builder
+        .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::AppleScript,
@@ -102,12 +105,15 @@ pub fn run() {
             // server::get_coco_servers_health_info,
             // server::get_user_profiles,
             // server::get_coco_server_datasources,
-            // server::get_coco_server_connectors
+            // server::get_coco_server_connectors,
+            server::websocket::connect_to_server,
+            server::websocket::disconnect,
         ])
         .setup(|app| {
             let registry = SearchSourceRegistry::default();
 
             app.manage(registry); // Store registry in Tauri's app state
+            app.manage(server::websocket::WebSocketManager::default());
 
             // Get app handle
             let app_handle = app.handle().clone();
