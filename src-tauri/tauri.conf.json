@@ -49,9 +49,7 @@
         "hiddenTitle": true,
         "visible": false,
         "windowEffects": {
-          "effects": [
-            "sidebar"
-          ],
+          "effects": ["sidebar"],
           "state": "active"
         }
       }
@@ -62,9 +60,7 @@
       "assetProtocol": {
         "enable": true,
         "scope": {
-          "allow": [
-            "**/*"
-          ],
+          "allow": ["**/*"],
           "requireLiteralLeadingDot": false
         }
       }
@@ -72,7 +68,8 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "createUpdaterArtifacts": true,
+    "targets": ["nsis", "dmg", "app", "appimage", "deb", "rpm"],
     "category": "Utility",
     "shortDescription": "Coco AI",
     "icon": [
@@ -107,22 +104,15 @@
         }
       }
     },
-    "resources": [
-      "assets",
-      "icons"
-    ]
+    "resources": ["assets", "icons"]
   },
   "plugins": {
     "features": {
-      "protocol": [
-        "all"
-      ]
+      "protocol": ["all"]
     },
     "window": {},
     "updater": {
-      "dialog": true,
-      "active": true,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEM5RjNFQUM3NDdGMjgzNUIKUldSYmcvSkh4K3J6eWFrYlRGTjFPZTJXQWIyMGJtWjdLVUplZm9kcHcvdWQ0aTZjMUYvOUJ5K08K",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlDRjNDRUU0NTdBMzdCRTMKUldUamU2Tlg1TTd6bkUwZWM0d2Zjdk0wdXJmendWVlpMMmhKN25EcmprYmIydnJ3dmFUME9QYXkK",
       "endpoints": [
         "https://api.coco.rs/update/{{target}}/{{arch}}/{{current_version}}"
       ]
@@ -135,15 +125,11 @@
       "mobile": [
         {
           "host": "app.infini.cloud",
-          "pathPrefix": [
-            "/open"
-          ]
+          "pathPrefix": ["/open"]
         }
       ],
       "desktop": {
-        "schemes": [
-          "coco"
-        ]
+        "schemes": ["coco"]
       }
     },
     "os": {}
