@@ -1,18 +1,18 @@
 import { useState, useRef, useEffect } from "react";
-import { isTauri } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
 
 import ChatAI, { ChatAIRef } from "@/components/Assistant/Chat";
 import { ChatInput } from "@/components/Assistant/ChatInput";
 import { Sidebar } from "@/components/Assistant/Sidebar";
 import type { Chat } from "@/components/Assistant/types";
-import { tauriFetch } from "@/api/tauriFetchClient";
-import { useWindows }  from "@/hooks/useWindows";
 import ApiDetails from "@/components/Common/ApiDetails";
+import { useAppStore } from "@/stores/appStore";
 
 interface ChatProps {}
 
 export default function Chat({}: ChatProps) {
-  const { closeWin } = useWindows();
+  const activeServer = useAppStore((state) => state.activeServer);
+
 
   const chatAIRef = useRef<ChatAIRef>(null);
 
@@ -32,12 +32,12 @@ export default function Chat({}: ChatProps) {
 
   const getChatHistory = async () => {
     try {
-      const response = await tauriFetch({
-        url: "/chat/_history",
-        method: "GET",
+      let response: any = await invoke("chat_history", {
+        serverId: activeServer?.id,
       });
+      response = JSON.parse(response || "")
       console.log("_history", response);
-      const hits = response.data?.hits?.hits || [];
+      const hits = response?.hits?.hits || [];
       setChats(hits);
       if (hits[0]) {
         onSelectChat(hits[0]);
@@ -67,12 +67,15 @@ export default function Chat({}: ChatProps) {
 
   const chatHistory = async (chat: Chat) => {
     try {
-      const response = await tauriFetch({
-        url: `/chat/${chat._id}/_history`,
-        method: "GET",
+      let response: any = await invoke("session_chat_history", {
+        serverId: activeServer?.id,
+        sessionId: chat?._id,
+        from: 0,
+        size: 20,
       });
+      response = JSON.parse(response || "")
       console.log("id_history", response);
-      const hits = response.data?.hits?.hits || [];
+      const hits = response?.hits?.hits || [];
       const updatedChat: Chat = {
         ...chat,
         messages: hits,
@@ -86,10 +89,11 @@ export default function Chat({}: ChatProps) {
   const chatClose = async () => {
     if (!activeChat?._id) return;
     try {
-      const response = await tauriFetch({
-        url: `/chat/${activeChat._id}/_close`,
-        method: "POST",
+      let response: any = await invoke("close_session_chat", {
+        serverId: activeServer?.id,
+        sessionId: activeChat?._id,
       });
+      response = JSON.parse(response || "")
       console.log("_close", response);
     } catch (error) {
       console.error("Failed to fetch user data:", error);
@@ -99,12 +103,13 @@ export default function Chat({}: ChatProps) {
   const onSelectChat = async (chat: any) => {
     chatClose();
     try {
-      const response = await tauriFetch({
-        url: `/chat/${chat._id}/_open`,
-        method: "POST",
+      let response: any = await invoke("open_session_chat", {
+        serverId: activeServer?.id,
+        sessionId: chat?._id,
       });
+      response = JSON.parse(response || "")
       console.log("_open", response);
-      chatHistory(response.data);
+      chatHistory(response);
     } catch (error) {
       console.error("Failed to fetch user data:", error);
     }
@@ -113,21 +118,16 @@ export default function Chat({}: ChatProps) {
   const cancelChat = async () => {
     if (!activeChat?._id) return;
     try {
-      const response = await tauriFetch({
-        url: `/chat/${activeChat._id}/_cancel`,
-        method: "POST",
+      let response: any = await invoke("cancel_session_chat", {
+        serverId: activeServer?.id,
+        sessionId: activeChat?._id,
       });
+      response = JSON.parse(response || "")
       console.log("_cancel", response);
     } catch (error) {
       console.error("Failed to fetch user data:", error);
     }
   };
-
-  async function closeWindow() {
-    if (isTauri() && closeWin) {
-      await closeWin("chat");
-    }
-  }
 
   return (
     <div className="h-screen">
