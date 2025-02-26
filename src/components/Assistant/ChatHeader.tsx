@@ -1,14 +1,9 @@
 import {
   MessageSquarePlus,
-  PictureInPicture2,
-  Pin,
-  PinOff,
   ChevronDownIcon,
   Settings,
   RefreshCw,
   Check,
-  PanelRightClose,
-  PanelRightOpen,
   Server,
 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -27,6 +22,11 @@ import { emit } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import logoImg from "@/assets/icon.svg";
+import HistoryIcon from "@/icons/History";
+import PinOffIcon from "@/icons/PinOff";
+import PinIcon from "@/icons/Pin";
+import ServerIcon from "@/icons/Server";
+import WindowsFullIcon from "@/icons/WindowsFull";
 import { useAppStore, IServer } from "@/stores/appStore";
 import { useChatStore } from "@/stores/chatStore";
 import type { Chat } from "./types";
@@ -144,11 +144,7 @@ export function ChatHeader({
           }}
           className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
         >
-          {isSidebarOpen ? (
-            <PanelRightOpen className="h-4 w-4" />
-          ) : (
-            <PanelRightClose className="h-4 w-4" />
-          )}
+          <HistoryIcon className="w-4 h-4" />
         </button>
 
         <Menu>
@@ -202,9 +198,9 @@ export function ChatHeader({
           }`}
         >
           {isPinned ? (
-            <Pin className="h-4 w-4" />
+            <PinIcon className="w-4 h-4" />
           ) : (
-            <PinOff className="h-4 w-4" />
+            <PinOffIcon className="w-4 h-4" />
           )}
         </button>
 
@@ -212,12 +208,12 @@ export function ChatHeader({
           onClick={onOpenChatAI}
           className="rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
         >
-          <PictureInPicture2 className="h-4 w-4" />
+          <WindowsFullIcon className="w-4 h-4" />
         </button>
 
         <Popover className="relative">
           <PopoverButton className="flex items-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
-            <Server className="h-4 w-4" />
+            <ServerIcon className="w-4 h-4" />
           </PopoverButton>
 
           <PopoverPanel className="absolute right-0 z-10 mt-2 min-w-[240px] bg-white dark:bg-[#202126] rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
