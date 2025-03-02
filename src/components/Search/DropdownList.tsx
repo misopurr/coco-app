@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { CircleAlert, Bolt, X, ArrowBigRight } from "lucide-react";
+import { isNil } from "lodash-es";
+import { useUnmount } from "ahooks";
 
 import { useSearchStore } from "@/stores/searchStore";
 import ThemedIcon from "@/components/Common/Icons/ThemedIcon";
@@ -8,8 +10,6 @@ import TypeIcon from "@/components/Common/Icons/TypeIcon";
 import SearchListItem from "./SearchListItem";
 import { metaOrCtrlKey, isMetaOrCtrlKey } from "@/utils/keyboardUtils";
 import { OpenURLWithBrowser } from "@/utils/index";
-import { isNil, isPlainObject } from "lodash-es";
-import { useUnmount } from "ahooks";
 
 type ISearchData = Record<string, any[]>;
 

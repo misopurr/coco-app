@@ -13,14 +13,15 @@ import { useTranslation } from "react-i18next";
 import { debounce } from "lodash-es";
 import { listen } from "@tauri-apps/api/event";
 
-import { ChatMessage } from "./ChatMessage";
-import type { Chat } from "./types";
+import { ChatMessage } from "@/components/ChatMessage";
+import type { Chat, IChunkData } from "./types";
 import { useChatStore } from "@/stores/chatStore";
 import { useWindows } from "@/hooks/useWindows";
 import { ChatHeader } from "./ChatHeader";
 import { Sidebar } from "@/components/Assistant/Sidebar";
 import { useConnectStore } from "@/stores/connectStore";
 import { useSearchStore } from "@/stores/searchStore";
+import { IServer } from "@/stores/appStore";
 
 interface ChatAIProps {
   isTransitioned: boolean;
@@ -72,23 +73,15 @@ const ChatAI = memo(
 
       const { createWin } = useWindows();
 
-      const {
-        curChatEnd,
-        setCurChatEnd,
-        connected,
-        setConnected,
-        messages,
-        setMessages,
-      } = useChatStore();
+      const { curChatEnd, setCurChatEnd, connected, setConnected } =
+        useChatStore();
+
       const currentService = useConnectStore((state) => state.currentService);
 
       const [activeChat, setActiveChat] = useState<Chat>();
-      const [isTyping, setIsTyping] = useState(false);
       const [timedoutShow, setTimedoutShow] = useState(false);
       const [errorShow, setErrorShow] = useState(false);
       const messagesEndRef = useRef<HTMLDivElement>(null);
-
-      const [curMessage, setCurMessage] = useState("");
 
       const curChatEndRef = useRef(curChatEnd);
       curChatEndRef.current = curChatEnd;
@@ -103,14 +96,12 @@ const ChatAI = memo(
         activeChatProp && setActiveChat(activeChatProp);
       }, [activeChatProp]);
 
-      const handleMessageChunk = useCallback((chunk: string) => {
-        setCurMessage((prev) => prev + chunk);
-      }, []);
-
-      const reconnect = async () => {
-        if (!currentService?.id) return;
+      const reconnect = async (server?: IServer) => {
+        server = server || currentService;
+        if (!server?.id) return;
         try {
-          await invoke("connect_to_server", { id: currentService?.id });
+          console.log("reconnect", 1111111, server.id);
+          await invoke("connect_to_server", { id: server.id });
           setConnected(true);
         } catch (error) {
           console.error("Failed to connect:", error);
@@ -119,88 +110,177 @@ const ChatAI = memo(
 
       const messageTimeoutRef = useRef<NodeJS.Timeout>();
 
+      const [Question, setQuestion] = useState<string>("");
+
+      const [query_intent, setQuery_intent] = useState<IChunkData>();
+      const deal_query_intent = useCallback((data: IChunkData) => {
+        setQuery_intent((prev: IChunkData | undefined): IChunkData => {
+          if (!prev) return data;
+          return {
+            ...prev,
+            message_chunk: prev.message_chunk + data.message_chunk,
+          };
+        });
+      }, []);
+
+      const [fetch_source, setFetch_source] = useState<IChunkData>();
+      const deal_fetch_source = useCallback((data: IChunkData) => {
+        setFetch_source(data);
+      }, []);
+
+      const [pick_source, setPick_source] = useState<IChunkData>();
+      const deal_pick_source = useCallback((data: IChunkData) => {
+        setPick_source((prev: IChunkData | undefined): IChunkData => {
+          if (!prev) return data;
+          return {
+            ...prev,
+            message_chunk: prev.message_chunk + data.message_chunk,
+          };
+        });
+      }, []);
+
+      const [deep_read, setDeep_read] = useState<IChunkData>();
+      const deal_deep_read = useCallback((data: IChunkData) => {
+        setDeep_read((prev: IChunkData | undefined): IChunkData => {
+          if (!prev) return data;
+          return {
+            ...prev,
+            message_chunk: prev.message_chunk + "&" + data.message_chunk,
+          };
+        });
+      }, []);
+
+      const [think, setThink] = useState<IChunkData>();
+      const deal_think = useCallback((data: IChunkData) => {
+        setThink((prev: IChunkData | undefined): IChunkData => {
+          if (!prev) return data;
+          return {
+            ...prev,
+            message_chunk: prev.message_chunk + data.message_chunk,
+          };
+        });
+      }, []);
+
+      const [response, setResponse] = useState<IChunkData>();
+      const deal_response = useCallback((data: IChunkData) => {
+        setResponse((prev: IChunkData | undefined): IChunkData => {
+          if (!prev) return data;
+          return {
+            ...prev,
+            message_chunk: prev.message_chunk + data.message_chunk,
+          };
+        });
+      }, []);
+
+      const clearCurrentChat = useCallback(() => {
+        setQuery_intent(undefined);
+        setFetch_source(undefined);
+        setPick_source(undefined);
+        setDeep_read(undefined);
+        setThink(undefined);
+        setResponse(undefined);
+      }, []);
+
       const dealMsg = useCallback(
         (msg: string) => {
-          // console.log("msg:", msg);
           if (messageTimeoutRef.current) {
             clearTimeout(messageTimeoutRef.current);
           }
 
-          if (msg.includes("PRIVATE")) {
-            messageTimeoutRef.current = setTimeout(() => {
-              if (!curChatEnd && isTyping) {
-                console.log("AI response timeout");
-                setTimedoutShow(true);
-                cancelChat();
-              }
-            }, 30000);
+          if (!msg.includes("PRIVATE")) return;
 
-            if (msg.includes("assistant finished output")) {
-              if (messageTimeoutRef.current) {
-                clearTimeout(messageTimeoutRef.current);
-              }
-              console.log("AI finished output");
-              setCurChatEnd(true);
-            } else {
-              const cleanedData = msg.replace(/^PRIVATE /, "");
-              try {
-                // console.log("cleanedData", cleanedData);
-                const chunkData = JSON.parse(cleanedData);
-                // console.log("msg1:", chunkData, curIdRef.current);
-
-                if (chunkData.reply_to_message === curIdRef.current) {
-                  handleMessageChunk(chunkData.message_chunk);
-                  return chunkData.message_chunk;
-                }
-              } catch (error) {
-                console.error("parse error:", error);
-              }
+          messageTimeoutRef.current = setTimeout(() => {
+            if (!curChatEnd) {
+              console.log("AI response timeout");
+              setTimedoutShow(true);
+              cancelChat();
             }
+          }, 30000);
+
+          if (msg.includes("assistant finished output")) {
+            clearTimeout(messageTimeoutRef.current);
+            console.log("AI finished output");
+            setCurChatEnd(true);
+            return;
+          }
+
+          const cleanedData = msg.replace(/^PRIVATE /, "");
+          try {
+            const chunkData = JSON.parse(cleanedData);
+
+            if (chunkData.reply_to_message !== curIdRef.current) return;
+
+            // ['query_intent', 'fetch_source', 'pick_source', 'deep_read', 'think', 'response'];
+            if (chunkData.chunk_type === "query_intent") {
+              deal_query_intent(chunkData);
+            } else if (chunkData.chunk_type === "fetch_source") {
+              deal_fetch_source(chunkData);
+            } else if (chunkData.chunk_type === "pick_source") {
+              deal_pick_source(chunkData);
+            } else if (chunkData.chunk_type === "deep_read") {
+              deal_deep_read(chunkData);
+            } else if (chunkData.chunk_type === "think") {
+              deal_think(chunkData);
+            } else if (chunkData.chunk_type === "response") {
+              deal_response(chunkData);
+            }
+          } catch (error) {
+            console.error("parse error:", error);
           }
         },
-        [curChatEnd, isTyping]
+        [curChatEnd]
       );
 
       useEffect(() => {
-        const unlisten = listen("ws-message", (event) => {
-          const data = dealMsg(String(event.payload));
-          if (data) {
-            setMessages((prev) => prev + data);
-          }
-        });
+        if (curChatEnd) {
+          simulateAssistantResponse();
+        }
+      }, [curChatEnd]);
+
+      useEffect(() => {
+        let unlisten_error = null;
+
+        if (connected) {
+          setErrorShow(false);
+          unlisten_error = listen("ws-error", (event) => {
+            console.error("WebSocket error:", event.payload);
+            setConnected(false);
+            setErrorShow(true);
+          });
+        }
 
         return () => {
-          unlisten.then((fn) => fn());
+          unlisten_error?.then((fn) => fn());
         };
-      }, []);
+      }, [connected]);
 
-      const assistantMessage = useMemo(() => {
-        if (!activeChat?._id || (!curMessage && !messages)) return null;
-        return {
-          _id: activeChat._id,
-          _source: {
-            type: "assistant",
-            message: curMessage || messages,
-          },
+      useEffect(() => {
+        let unlisten_message = null;
+        if (connected) {
+          setErrorShow(false);
+          unlisten_message = listen("ws-message", (event) => {
+            dealMsg(String(event.payload));
+          });
+        }
+
+        return () => {
+          unlisten_message?.then((fn) => fn());
         };
-      }, [activeChat?._id, curMessage, messages]);
+      }, [dealMsg, connected]);
 
       const updatedChat = useMemo(() => {
-        if (!activeChat?._id || !assistantMessage) return null;
+        if (!activeChat?._id) return null;
         return {
           ...activeChat,
-          messages: [...(activeChat.messages || []), assistantMessage],
+          messages: [...(activeChat.messages || [])],
         };
-      }, [activeChat, assistantMessage]);
+      }, [activeChat]);
 
       const simulateAssistantResponse = useCallback(() => {
         if (!updatedChat) return;
 
         console.log("updatedChat:", updatedChat);
         setActiveChat(updatedChat);
-        setMessages("");
-        setCurMessage("");
-        setIsTyping(false);
       }, [updatedChat]);
 
       useEffect(() => {
@@ -271,7 +351,15 @@ const ChatAI = memo(
 
       useEffect(() => {
         scrollToBottom();
-      }, [activeChat?.messages, isTyping, curMessage]);
+      }, [
+        activeChat?.messages,
+        query_intent?.message_chunk,
+        fetch_source?.message_chunk,
+        pick_source?.message_chunk,
+        deep_read?.message_chunk,
+        think?.message_chunk,
+        response?.message_chunk,
+      ]);
 
       const clearChat = () => {
         console.log("clearChat");
@@ -281,43 +369,47 @@ const ChatAI = memo(
         clearChatPage && clearChatPage();
       };
 
-      const createNewChat = useCallback(async (value: string = "") => {
-        setTimedoutShow(false);
-        setErrorShow(false);
-        chatClose();
-        try {
-          console.log("sourceDataIds", sourceDataIds);
-          let response: any = await invoke("new_chat", {
-            serverId: currentService?.id,
-            message: value,
-            queryParams: {
-              search: isSearchActive,
-              deep_thinking: isDeepThinkActive,
-              datasource: sourceDataIds.join(","),
-            },
-          });
-          console.log("_new", response);
-          const newChat: Chat = response;
-          curIdRef.current = response?.payload?.id;
+      const createNewChat = useCallback(
+        async (value: string = "") => {
+          setTimedoutShow(false);
+          setErrorShow(false);
+          chatClose();
+          clearCurrentChat();
+          setQuestion(value);
+          try {
+            // console.log("sourceDataIds", sourceDataIds);
+            let response: any = await invoke("new_chat", {
+              serverId: currentService?.id,
+              message: value,
+              queryParams: {
+                search: isSearchActive,
+                deep_thinking: isDeepThinkActive,
+                datasource: sourceDataIds.join(","),
+              },
+            });
+            console.log("_new", response);
+            const newChat: Chat = response;
+            curIdRef.current = response?.payload?.id;
 
-          newChat._source = {
-            message: value,
-          };
-          const updatedChat: Chat = {
-            ...newChat,
-            messages: [newChat],
-          };
+            newChat._source = {
+              message: value,
+            };
+            const updatedChat: Chat = {
+              ...newChat,
+              messages: [newChat],
+            };
 
-          changeInput && changeInput("");
-          console.log("updatedChat2", updatedChat);
-          setActiveChat(updatedChat);
-          setIsTyping(true);
-          setCurChatEnd(false);
-        } catch (error) {
-          setErrorShow(true);
-          console.error("Failed to fetch user data:", error);
-        }
-      }, []);
+            changeInput && changeInput("");
+            console.log("updatedChat2", updatedChat);
+            setActiveChat(updatedChat);
+            setCurChatEnd(false);
+          } catch (error) {
+            setErrorShow(true);
+            console.error("Failed to fetch user data:", error);
+          }
+        },
+        [isSearchActive, isDeepThinkActive]
+      );
 
       const init = (value: string) => {
         if (!curChatEnd) return;
@@ -332,10 +424,14 @@ const ChatAI = memo(
         async (content: string, newChat?: Chat) => {
           newChat = newChat || activeChat;
           if (!newChat?._id || !content) return;
+          setQuestion(content);
+          await chatHistory(newChat);
+
           setTimedoutShow(false);
           setErrorShow(false);
+          clearCurrentChat();
           try {
-            console.log("sourceDataIds", sourceDataIds);
+            // console.log("sourceDataIds", sourceDataIds);
             let response: any = await invoke("send_message", {
               serverId: currentService?.id,
               sessionId: newChat?._id,
@@ -358,7 +454,6 @@ const ChatAI = memo(
             changeInput && changeInput("");
             console.log("updatedChat2", updatedChat);
             setActiveChat(updatedChat);
-            setIsTyping(true);
             setCurChatEnd(false);
           } catch (error) {
             setErrorShow(true);
@@ -383,12 +478,7 @@ const ChatAI = memo(
       };
 
       const cancelChat = async () => {
-        if (curMessage || messages) {
-          simulateAssistantResponse();
-        }
-
         setCurChatEnd(true);
-        setIsTyping(false);
         if (!activeChat?._id) return;
         try {
           let response: any = await invoke("cancel_session_chat", {
@@ -427,10 +517,7 @@ const ChatAI = memo(
             clearTimeout(messageTimeoutRef.current);
           }
           chatClose();
-          setMessages("");
-          setCurMessage("");
           setActiveChat(undefined);
-          setIsTyping(false);
           setCurChatEnd(true);
           scrollToBottom.cancel();
         };
@@ -564,6 +651,7 @@ const ChatAI = memo(
             }}
             isSidebarOpen={isSidebarOpenChat}
             activeChat={activeChat}
+            reconnect={reconnect}
           />
 
           {/* Chat messages */}
@@ -577,32 +665,42 @@ const ChatAI = memo(
                   message: t("assistant.chat.greetings"),
                 },
               }}
-              isTyping={false}
             />
 
             {activeChat?.messages?.map((message, index) => (
               <ChatMessage
                 key={message._id + index}
                 message={message}
-                isTyping={
-                  isTyping &&
-                  index === (activeChat.messages?.length || 0) - 1 &&
-                  message._source?.type === "assistant"
-                }
+                isTyping={false}
+                onResend={handleSendMessage}
               />
             ))}
 
-            {!curChatEnd && activeChat?._id ? (
+            {(query_intent ||
+              fetch_source ||
+              pick_source ||
+              deep_read ||
+              think ||
+              response) &&
+            activeChat?._id ? (
               <ChatMessage
-                key={"last"}
+                key={"current"}
                 message={{
-                  _id: activeChat?._id,
+                  _id: "current",
                   _source: {
                     type: "assistant",
-                    message: curMessage,
+                    message: "",
+                    question: Question,
                   },
                 }}
+                onResend={handleSendMessage}
                 isTyping={!curChatEnd}
+                query_intent={query_intent}
+                fetch_source={fetch_source}
+                pick_source={pick_source}
+                deep_read={deep_read}
+                think={think}
+                response={response}
               />
             ) : null}
 
@@ -614,8 +712,10 @@ const ChatAI = memo(
                   _source: {
                     type: "assistant",
                     message: t("assistant.chat.timedout"),
+                    question: Question,
                   },
                 }}
+                onResend={handleSendMessage}
                 isTyping={false}
               />
             ) : null}
@@ -628,8 +728,10 @@ const ChatAI = memo(
                   _source: {
                     type: "assistant",
                     message: t("assistant.chat.error"),
+                    question: Question,
                   },
                 }}
+                onResend={handleSendMessage}
                 isTyping={false}
               />
             ) : null}

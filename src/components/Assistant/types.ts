@@ -12,6 +12,8 @@ export interface ISource {
   session_id?: string;
   type?: string;
   message?: any;
+  title?: string;
+  question?: string;
 }
 export interface Chat {
   _id: string;
@@ -23,5 +25,16 @@ export interface Chat {
   title?: string;
   messages?: any[];
   payload?: string;
+  [key: string]: any;
+}
+
+export interface IChunkData {
+  session_id: string;
+  message_id: string;
+  message_type: string;
+  reply_to_message: string;
+  chunk_sequence: number;
+  chunk_type: string;
+  message_chunk: string;
   [key: string]: any;
 }

@@ -131,14 +131,20 @@
     "message": {
       "logo": "Coco AI 图标",
       "aiName": "Coco AI",
-      "thinking": "AI 正在思考...",
-      "thoughtTime": "思考了数秒",
       "thinkingButton": "查看思考过程",
       "steps": {
-        "understand_the_query": "理解查询",
-        "retrieve_documents": "检索文档",
-        "intelligent_pre_selection": "智能预选",
-        "deep_reading": "深度阅读"
+        "query_intent": "理解查询",
+        "source_zero": "正在搜索相关文档",
+        "fetch_source": "检索 {{count}} 份文档",
+        "pick_source": "智能预选 {{count}} 个结果",
+        "deep_read": "深度阅读，",
+        "think": "AI 正在思考...",
+        "thoughtTime": "思考了数秒",
+        "keywords": "关键词",
+        "questionType": "查询类型",
+        "userIntent": "用户意图",
+        "relatedQuestions": "查询",
+        "informationSeeking": "信息查询"
       }
     },
     "sidebar": {
@@ -148,7 +154,8 @@
       "untitledChat": "未命名对话"
     },
     "source": {
-      "foundResults": "找到 {{count}} 个结果"
+      "fetch_source": "找到 {{count}} 个结果",
+      "pick_source": "{{count}} 个结果"
     }
   },
   "cloud": {

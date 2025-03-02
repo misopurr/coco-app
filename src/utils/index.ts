@@ -90,49 +90,4 @@ export const formatter = {
   },
 };
 
-export const formatThinkingMessage = (message: string) => {
-  const segments: Array<{
-    text: string;
-    isThinking: boolean;
-    thinkContent: string;
-    isSource?: boolean;
-  }> = [];
-
-  if (!message) return segments;
-
-  const sourceRegex = /(<Source.*?>.*?<\/Source>)/gs;
-  const parts = message.split(sourceRegex);
-
-  parts.forEach(part => {
-    if (part.startsWith('<Source')) {
-      segments.push({
-        text: part,
-        isThinking: false,
-        thinkContent: '',
-        isSource: true
-      });
-    } else {
-      const thinkParts = part.split(/(<think>.*?<\/think>)/s);
-      
-      thinkParts.forEach(thinkPart => {
-        if (thinkPart.startsWith('<think>')) {
-          const content = thinkPart.replace(/<\/?think>/g, '');
-          segments.push({
-            text: '',
-            isThinking: true,
-            thinkContent: content.trim()
-          });
-        } else if (thinkPart.trim()) {
-          segments.push({
-            text: thinkPart.trim(),
-            isThinking: false,
-            thinkContent: ''
-          });
-        }
-      });
-    }
-  });
-
-  return segments;
-};
 

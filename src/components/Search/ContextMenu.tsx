@@ -1,7 +1,7 @@
 import { useOSKeyPress } from "@/hooks/useOSKeyPress";
 import { useSearchStore } from "@/stores/searchStore";
 import { copyToClipboard, OpenURLWithBrowser } from "@/utils";
-import { isMac, isWin } from "@/utils/platform";
+import { isMac } from "@/utils/platform";
 import {
   useClickAway,
   useCreation,

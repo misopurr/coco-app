@@ -5,27 +5,63 @@ import {
   SquareArrowOutUpRight,
   Globe,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 import { OpenURLWithBrowser } from "@/utils/index";
+import type { IChunkData } from "@/components/Assistant/types";
 
-interface SourceResultProps {
-  text: string;
-  prefix?: string;
-  data?: any[];
-  total?: string;
-  type?: string;
+interface FetchSourceProps {
+  ChunkData?: IChunkData;
 }
 
-export const SourceResult = ({
-  prefix,
-  data,
-  total,
-  type,
-}: SourceResultProps) => {
+interface ISourceData {
+  category: string;
+  icon: string;
+  id: string;
+  size: number;
+  source: {
+    type: string;
+    name: string;
+    id: string;
+  };
+  summary: string;
+  thumbnail: string;
+  title: string;
+  updated: string | null;
+  url: string;
+}
+
+export const FetchSource = ({ ChunkData }: FetchSourceProps) => {
   const { t } = useTranslation();
   const [isSourceExpanded, setIsSourceExpanded] = useState(false);
+
+  const [total, setTotal] = useState(0);
+  const [data, setData] = useState<ISourceData[]>([]);
+
+  useEffect(() => {
+    if (!ChunkData?.message_chunk) return;
+
+    try {
+      const match = ChunkData.message_chunk.match(
+        /\u003cPayload total=(\d+)\u003e/
+      );
+      if (match) {
+        setTotal(Number(match[1]));
+      }
+
+      const jsonMatch = ChunkData.message_chunk.match(/\[(.*)\]/s);
+      if (jsonMatch) {
+        const jsonData = JSON.parse(jsonMatch[0]);
+        setData(jsonData);
+      }
+    } catch (e) {
+      console.error("Failed to parse fetch source data:", e);
+    }
+  }, [ChunkData?.message_chunk]);
+
+  // Must be after hooks ！！！
+  if (!ChunkData) return null;
 
   return (
     <div
@@ -46,7 +82,7 @@ export const SourceResult = ({
         <div className="flex-1 min-w-0 flex items-center gap-2">
           <Search className="w-4 h-4 text-[#38C200] flex-shrink-0" />
           <span className="text-xs text-[#999999]">
-            {t(`assistant.message.steps.${type}`, {
+            {t(`assistant.message.steps.${ChunkData?.chunk_type}`, {
               count: Number(total),
             })}
           </span>
@@ -60,11 +96,11 @@ export const SourceResult = ({
 
       {isSourceExpanded && (
         <>
-          {prefix && (
+          {/* {prefix && (
             <div className="px-3 py-2 bg-[#F7F7F7] dark:bg-[#1E1E1E] text-[#666666] dark:text-[#A3A3A3] text-xs leading-relaxed border-b border-[#E6E6E6] dark:border-[#272626]">
               {prefix}
             </div>
-          )}
+          )} */}
           {data?.map((item, idx) => (
             <div
               key={idx}
