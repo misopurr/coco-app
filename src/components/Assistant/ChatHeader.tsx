@@ -73,9 +73,9 @@ export function ChatHeader({
 
         if (resetSelection && enabledServers.length > 0) {
           const currentServiceExists = enabledServers.some(
-            server => server.id === currentService?.id
+            (server) => server.id === currentService?.id
           );
-          
+
           if (currentServiceExists) {
             switchServer(currentService);
           } else {
@@ -194,8 +194,10 @@ export function ChatHeader({
       </div>
 
       <div>
-        <h2 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-          {activeChat?._source?.title || activeChat?._id}
+        <h2 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+          {activeChat?._source?.title ||
+            activeChat?._source?.message ||
+            activeChat?._id}
         </h2>
       </div>
 
@@ -205,10 +207,6 @@ export function ChatHeader({
           className={`${isPinned ? "text-blue-500" : ""}`}
         >
           {isPinned ? <PinIcon /> : <PinOffIcon />}
-        </button>
-
-        <button onClick={onOpenChatAI}>
-          <WindowsFullIcon />
         </button>
 
         <Popover className="relative">
@@ -307,6 +305,10 @@ export function ChatHeader({
             </div>
           </PopoverPanel>
         </Popover>
+
+        <button onClick={onOpenChatAI}>
+          <WindowsFullIcon className="rotate-30 scale-x-[-1]" />
+        </button>
       </div>
     </header>
   );
