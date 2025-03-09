@@ -73,7 +73,7 @@ pub async fn open_session_chat<R: Runtime>(
     server_id: String,
     session_id: String,
 ) -> Result<String, String> {
-    let mut query_params = HashMap::new();
+    let query_params = HashMap::new();
     let path = format!("/chat/{}/_open", session_id);
 
     let response = HttpClient::post(&server_id, path.as_str(), Some(query_params), None)
@@ -89,7 +89,7 @@ pub async fn close_session_chat<R: Runtime>(
     server_id: String,
     session_id: String,
 ) -> Result<String, String> {
-    let mut query_params = HashMap::new();
+    let query_params = HashMap::new();
     let path = format!("/chat/{}/_close", session_id);
 
     let response = HttpClient::post(&server_id, path.as_str(), Some(query_params), None)
@@ -104,7 +104,7 @@ pub async fn cancel_session_chat<R: Runtime>(
     server_id: String,
     session_id: String,
 ) -> Result<String, String> {
-    let mut query_params = HashMap::new();
+    let query_params = HashMap::new();
     let path = format!("/chat/{}/_cancel", session_id);
 
     let response = HttpClient::post(&server_id, path.as_str(), Some(query_params), None)

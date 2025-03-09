@@ -5,7 +5,6 @@ use std::sync::Arc;
 use tauri::Emitter;
 use tokio::net::TcpStream;
 use tokio::sync::{mpsc, Mutex};
-use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use tokio_tungstenite::tungstenite::Error;
 use tokio_tungstenite::tungstenite::Error as WsError;
 use tokio_tungstenite::{
@@ -104,7 +103,7 @@ pub async fn connect_to_server(
 
     // Establish the WebSocket connection
     // dbg!(&request);
-    let (mut ws_remote, _) = connect_async(request).await.map_err(|e| match e {
+    let (ws_remote, _) = connect_async(request).await.map_err(|e| match e {
         Error::ConnectionClosed => "WebSocket connection was closed".to_string(),
         Error::Protocol(protocol_error) => format!("Protocol error: {}", protocol_error),
         Error::Utf8 => "UTF-8 error in WebSocket data".to_string(),

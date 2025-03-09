@@ -16,7 +16,6 @@ use crate::server::servers::{load_or_insert_default_server, load_servers_token};
 use autostart::{change_autostart, enable_autostart};
 use lazy_static::lazy_static;
 use reqwest::Client;
-use std::path::PathBuf;
 use std::sync::Mutex;
 #[cfg(target_os = "macos")]
 use tauri::ActivationPolicy;
@@ -56,7 +55,7 @@ struct Payload {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let mut ctx = tauri::generate_context!();
+    let ctx = tauri::generate_context!();
     // Initialize logger
     env_logger::init();
 

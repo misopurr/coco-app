@@ -36,7 +36,7 @@ impl HttpClient {
         headers: Option<HashMap<String, String>>,
         body: Option<reqwest::Body>,
     ) -> Result<reqwest::Response, String> {
-        let mut request_builder = Self::get_request_builder(method, url, headers, query_params, body).await;
+        let request_builder = Self::get_request_builder(method, url, headers, query_params, body).await;
 
         let response = request_builder.send().await
             .map_err(|e| format!("Failed to send request: {}", e))?;
@@ -98,7 +98,7 @@ impl HttpClient {
             let mut headers = if let Some(custom_headers) = custom_headers {
                 custom_headers
             } else {
-                let mut headers = HashMap::new();
+                let headers = HashMap::new();
                 headers
             };
 
